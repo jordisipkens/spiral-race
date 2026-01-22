@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiraal Boards - 3 Parallelle Spiralen</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'RuneScape', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+        
+        .board-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        
+        .tab-button {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            border: 2px solid #555;
+            color: #999;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            min-width: 180px;
+        }
+        
+        .tab-button:hover:not(.locked) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        .tab-button.active {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(255,215,0,0.4);
+            border-color: #ffd700;
+            border-width: 3px;
+        }
+        
+        .tab-button.locked {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .tab-button.easy {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border-color: #2980b9;
+            color: white;
+        }
+        
+        .tab-button.medium {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            border-color: #e67e22;
+            color: white;
+        }
+        
+        .tab-button.hard {
+            background: linear-gradient(135deg, #c0392b 0%, #8e44ad 100%);
+            border-color: #8e44ad;
+            color: white;
+        }
+        
+        .lock-icon {
+            font-size: 14px;
+            margin-left: 8px;
+        }
+        
+        .board-container {
+            position: relative;
+            width: 750px;
+            display: none;
+        }
+        
+        .board-container.active {
+            display: block;
+        }
+        
+        .spiral-container {
+            width: 750px;
+            height: 750px;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 20px rgba(255,215,0,0.2));
+        }
+        
+        .segment {
+            stroke: #1a1a2e;
+            stroke-width: 2;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            opacity: 0.6;
+        }
+        
+        .segment:hover:not(.locked) {
+            stroke-width: 3;
+            filter: brightness(1.15);
+            opacity: 0.85;
+        }
+        
+        .segment.locked { 
+            cursor: not-allowed;
+            opacity: 0.25;
+            filter: grayscale(0.5);
+        }
+        
+        .segment.active { 
+            stroke: #ffd700;
+            stroke-width: 4;
+            animation: subtleGlow 2s ease-in-out infinite;
+            opacity: 1;
+        }
+        
+        .segment.completed {
+            opacity: 0.3;
+            stroke: #1a1a2e;
+            stroke-width: 2;
+            filter: brightness(0.6);
+        }
+        
+        .center-tile {
+            stroke: #1a1a2e;
+            stroke-width: 4;
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+        
+        .center-tile.locked { 
+            cursor: not-allowed;
+            opacity: 0.25;
+        }
+        
+        .center-tile.active { 
+            stroke: #ffd700;
+            stroke-width: 5;
+            animation: subtleGlow 2s ease-in-out infinite;
+            opacity: 1;
+        }
+        
+        .center-tile.completed {
+            opacity: 0.5;
+            stroke: #2ecc71;
+            stroke-width: 4;
+        }
+        
+        @keyframes subtleGlow {
+            0%, 100% { 
+                filter: brightness(1.1) drop-shadow(0 0 8px rgba(255,215,0,0.4));
+            }
+            50% { 
+                filter: brightness(1.2) drop-shadow(0 0 12px rgba(255,215,0,0.6));
+            }
+        }
+        
+        .tile-label {
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            fill: #fff;
+            pointer-events: none;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+        }
+        
+        .tile-label.locked { 
+            fill: #666;
+            opacity: 0.5;
+        }
+        
+        .tile-label.completed {
+            opacity: 0.4;
+            fill: #888;
+        }
+        
+        .difficulty-icon {
+            font-size: 16px;
+        }
+        
+        .controls {
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .control-label {
+            font-size: 14px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        button.path1-btn { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+        button.path2-btn { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
+        button.path3-btn { background: linear-gradient(135deg, #c0392b 0%, #8e44ad 100%); }
+        button.reset-btn { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+        
+        .progress-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        .progress-track {
+            text-align: center;
+        }
+        
+        .track-name {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .track-progress {
+            font-size: 1.3em;
+            color: #ffd700;
+        }
+        
+        .center-status {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #00ff88;
+        }
+        
+        .board-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .board-title.easy { color: #3498db; }
+        .board-title.medium { color: #f39c12; }
+        .board-title.hard { color: #c0392b; }
+        
+        .unlock-message {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(52, 152, 219, 0.2);
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Spiraal Race - 3 Boards</h1>
+    </div>
+    
+    <div class="board-tabs">
+        <button class="tab-button easy active" onclick="switchBoard('easy')">
+            ⚡ Easy Spiraal
+        </button>
+        <button class="tab-button medium locked" onclick="switchBoard('medium')" id="mediumTab">
+            ⚔️ Medium Spiraal
+            <span class="lock-icon">🔒</span>
+        </button>
+        <button class="tab-button hard locked" onclick="switchBoard('hard')" id="hardTab">
+            💀 Hard Spiraal
+            <span class="lock-icon">🔒</span>
+        </button>
+    </div>
+    
+    <!-- Easy Board -->
+    <div class="board-container active" id="easyBoard">
+        <div class="board-title easy">⚡ Easy Spiraal</div>
+        <div class="spiral-container">
+            <svg viewBox="0 0 750 750" id="easySvg"></svg>
+        </div>
+        <div class="unlock-message" style="background: rgba(52, 152, 219, 0.2); color: #3498db;">
+            Unlock Medium: Voltooi <span id="mediumReq">5</span> ringen (elk met 3 paden)
+        </div>
+    </div>
+    
+    <!-- Medium Board -->
+    <div class="board-container" id="mediumBoard">
+        <div class="board-title medium">⚔️ Medium Spiraal</div>
+        <div class="spiral-container">
+            <svg viewBox="0 0 750 750" id="mediumSvg"></svg>
+        </div>
+        <div class="unlock-message" style="background: rgba(243, 156, 18, 0.2); color: #f39c12;">
+            Unlock Hard: Voltooi <span id="hardReq">5</span> ringen (elk met 3 paden)
+        </div>
+    </div>
+    
+    <!-- Hard Board -->
+    <div class="board-container" id="hardBoard">
+        <div class="board-title hard">💀 Hard Spiraal</div>
+        <div class="spiral-container">
+            <svg viewBox="0 0 750 750" id="hardSvg"></svg>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <div class="control-label">Pad 1</div>
+            <button class="path1-btn" onclick="completePath(0)">Voltooi Tile</button>
+        </div>
+        <div class="control-group">
+            <div class="control-label">Pad 2</div>
+            <button class="path2-btn" onclick="completePath(1)">Voltooi Tile</button>
+        </div>
+        <div class="control-group">
+            <div class="control-label">Pad 3</div>
+            <button class="path3-btn" onclick="completePath(2)">Voltooi Tile</button>
+        </div>
+        <div class="control-group">
+            <button class="reset-btn" onclick="resetAll()">↻ Reset Alles</button>
+        </div>
+    </div>
+    
+    <div class="progress-container">
+        <div class="progress-track">
+            <div class="track-name" id="track0Name" style="color: #3498db;">Pad 1</div>
+            <div class="track-progress"><span id="progress0">0/10</span></div>
+        </div>
+        <div class="progress-track">
+            <div class="track-name" id="track1Name" style="color: #e67e22;">Pad 2</div>
+            <div class="track-progress"><span id="progress1">0/10</span></div>
+        </div>
+        <div class="progress-track">
+            <div class="track-name" id="track2Name" style="color: #c0392b;">Pad 3</div>
+            <div class="track-progress"><span id="progress2">0/10</span></div>
+        </div>
+    </div>
+    
+    <div class="center-status">
+        Center: <span id="centerStatus">Vergrendeld</span>
+    </div>
+
+    <script>
+        const UNLOCK_REQUIREMENTS = {
+            medium: 5,  // 5 ringen (= 15 tiles totaal)
+            hard: 5
+        };
+        
+        let currentBoard = 'easy';
+        
+        // Progress per board: array van 3 paths
+        let boardProgress = {
+            easy: { paths: [0, 0, 0], centerCompleted: false },
+            medium: { paths: [0, 0, 0], centerCompleted: false },
+            hard: { paths: [0, 0, 0], centerCompleted: false }
+        };
+        
+        const centerX = 375;
+        const centerY = 375;
+        const pathIcons = ['⚡', '⚔️', '💀'];
+        
+        // Color schemes per board
+        const colorSchemes = {
+            easy: {
+                locked: ['#34495e', '#2c3e50'],
+                active: ['#3498db', '#2980b9'],
+                completed: ['#1abc9c', '#16a085']
+            },
+            medium: {
+                locked: ['#4a4a4a', '#3a3a3a'],
+                active: ['#f39c12', '#e67e22'],
+                completed: ['#f1c40f', '#f39c12']
+            },
+            hard: {
+                locked: ['#3d3d3d', '#2d2d2d'],
+                active: ['#c0392b', '#8e44ad'],
+                completed: ['#e74c3c', '#9b59b6']
+            }
+        };
+        
+        function createGradients(svg, boardType) {
+            const colors = colorSchemes[boardType];
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            
+            // Locked gradient
+            const gradLocked = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradLocked.setAttribute('id', `grad${boardType}Locked`);
+            gradLocked.setAttribute('x1', '0%');
+            gradLocked.setAttribute('y1', '0%');
+            gradLocked.setAttribute('x2', '100%');
+            gradLocked.setAttribute('y2', '100%');
+            gradLocked.innerHTML = `
+                <stop offset="0%" style="stop-color:${colors.locked[0]};stop-opacity:1" />
+                <stop offset="100%" style="stop-color:${colors.locked[1]};stop-opacity:1" />
+            `;
+            defs.appendChild(gradLocked);
+            
+            // Active gradient
+            const gradActive = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradActive.setAttribute('id', `grad${boardType}Active`);
+            gradActive.setAttribute('x1', '0%');
+            gradActive.setAttribute('y1', '0%');
+            gradActive.setAttribute('x2', '100%');
+            gradActive.setAttribute('y2', '100%');
+            gradActive.innerHTML = `
+                <stop offset="0%" style="stop-color:${colors.active[0]};stop-opacity:1" />
+                <stop offset="100%" style="stop-color:${colors.active[1]};stop-opacity:1" />
+            `;
+            defs.appendChild(gradActive);
+            
+            // Completed gradient
+            const gradCompleted = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradCompleted.setAttribute('id', `grad${boardType}Completed`);
+            gradCompleted.setAttribute('x1', '0%');
+            gradCompleted.setAttribute('y1', '0%');
+            gradCompleted.setAttribute('x2', '100%');
+            gradCompleted.setAttribute('y2', '100%');
+            gradCompleted.innerHTML = `
+                <stop offset="0%" style="stop-color:${colors.completed[0]};stop-opacity:1" />
+                <stop offset="100%" style="stop-color:${colors.completed[1]};stop-opacity:1" />
+            `;
+            defs.appendChild(gradCompleted);
+            
+            svg.appendChild(defs);
+        }
+        
+        function createSegmentPath(innerRadius, outerRadius, startAngle, endAngle) {
+            const startRad = (startAngle - 90) * Math.PI / 180;
+            const endRad = (endAngle - 90) * Math.PI / 180;
+            
+            const x1 = centerX + innerRadius * Math.cos(startRad);
+            const y1 = centerY + innerRadius * Math.sin(startRad);
+            const x2 = centerX + outerRadius * Math.cos(startRad);
+            const y2 = centerY + outerRadius * Math.sin(startRad);
+            const x3 = centerX + outerRadius * Math.cos(endRad);
+            const y3 = centerY + outerRadius * Math.sin(endRad);
+            const x4 = centerX + innerRadius * Math.cos(endRad);
+            const y4 = centerY + innerRadius * Math.sin(endRad);
+            
+            const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+            
+            return `
+                M ${x1} ${y1}
+                L ${x2} ${y2}
+                A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x3} ${y3}
+                L ${x4} ${y4}
+                A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x1} ${y1}
+                Z
+            `;
+        }
+        
+        function calculateLabelPosition(innerRadius, outerRadius, startAngle, endAngle) {
+            const midAngle = (startAngle + endAngle) / 2;
+            const midRadius = (innerRadius + outerRadius) / 2;
+            const midRad = (midAngle - 90) * Math.PI / 180;
+            
+            return {
+                x: centerX + midRadius * Math.cos(midRad),
+                y: centerY + midRadius * Math.sin(midRad)
+            };
+        }
+        
+        function initializeBoard(boardType, svgId) {
+            const svg = document.getElementById(svgId);
+            svg.innerHTML = '';
+            
+            createGradients(svg, boardType);
+            
+            const numRings = 10;
+            const outerRadius = 350;
+            const innerRadius = 100;
+            const ringThickness = (outerRadius - innerRadius) / numRings;
+            
+            // Create 10 rings, each with 3 segments
+            for (let ring = 0; ring < numRings; ring++) {
+                const ringOuter = outerRadius - (ring * ringThickness);
+                const ringInner = ringOuter - ringThickness;
+                const rotationOffset = ring * 18;
+                
+                // 3 segments per ring
+                for (let segment = 0; segment < 3; segment++) {
+                    const startAngle = rotationOffset + (segment * 120);
+                    const endAngle = startAngle + 120;
+                    
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', createSegmentPath(ringInner, ringOuter, startAngle, endAngle));
+                    path.classList.add('segment');
+                    path.setAttribute('data-ring', ring + 1);
+                    path.setAttribute('data-path', segment);
+                    path.setAttribute('data-board', boardType);
+                    path.addEventListener('click', () => handleSegmentClick(segment, ring + 1));
+                    svg.appendChild(path);
+                    
+                    const labelPos = calculateLabelPosition(ringInner, ringOuter, startAngle, endAngle);
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.classList.add('tile-label');
+                    text.setAttribute('x', labelPos.x);
+                    text.setAttribute('y', labelPos.y);
+                    text.setAttribute('data-ring-label', ring + 1);
+                    text.setAttribute('data-path-label', segment);
+                    
+                    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                    icon.classList.add('difficulty-icon');
+                    icon.textContent = pathIcons[segment];
+                    text.appendChild(icon);
+                    
+                    svg.appendChild(text);
+                }
+            }
+            
+            // Center tile
+            const centerSize = 90;
+            const centerTile = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerTile.setAttribute('cx', centerX);
+            centerTile.setAttribute('cy', centerY);
+            centerTile.setAttribute('r', centerSize / 2);
+            centerTile.classList.add('center-tile');
+            centerTile.addEventListener('click', handleCenterClick);
+            svg.appendChild(centerTile);
+            
+            const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            centerText.classList.add('tile-label');
+            centerText.setAttribute('x', centerX);
+            centerText.setAttribute('y', centerY);
+            centerText.setAttribute('font-size', '24');
+            centerText.textContent = '👑';
+            svg.appendChild(centerText);
+        }
+        
+        function updateBoardState(boardType, svgId) {
+            const svg = document.getElementById(svgId);
+            const progress = boardProgress[boardType];
+            
+            const segments = svg.querySelectorAll('.segment');
+            segments.forEach(segment => {
+                const ring = parseInt(segment.getAttribute('data-ring'));
+                const path = parseInt(segment.getAttribute('data-path'));
+                const pathProgress = progress.paths[path];
+                
+                segment.classList.remove('locked', 'active', 'completed');
+                segment.style.fill = '';
+                
+                if (ring <= pathProgress) {
+                    segment.classList.add('completed');
+                    segment.style.fill = `url(#grad${boardType}Completed)`;
+                } else if (ring === pathProgress + 1) {
+                    segment.classList.add('active');
+                    segment.style.fill = `url(#grad${boardType}Active)`;
+                } else {
+                    segment.classList.add('locked');
+                    segment.style.fill = `url(#grad${boardType}Locked)`;
+                }
+            });
+            
+            const centerTile = svg.querySelector('.center-tile');
+            centerTile.classList.remove('locked', 'active', 'completed');
+            centerTile.style.fill = '';
+            
+            const allPathsComplete = progress.paths.every(p => p === 5);
+            
+            if (progress.centerCompleted) {
+                centerTile.classList.add('completed');
+                centerTile.style.fill = `url(#grad${boardType}Completed)`;
+            } else if (allPathsComplete) {
+                centerTile.classList.add('active');
+                centerTile.style.fill = `url(#grad${boardType}Active)`;
+            } else {
+                centerTile.classList.add('locked');
+                centerTile.style.fill = `url(#grad${boardType}Locked)`;
+            }
+            
+            const labels = svg.querySelectorAll('.tile-label');
+            labels.forEach(label => {
+                const ring = parseInt(label.getAttribute('data-ring-label'));
+                const path = parseInt(label.getAttribute('data-path-label'));
+                if (ring === null || path === null) return;
+                
+                const pathProgress = progress.paths[path];
+                
+                // Remove all state classes
+                label.classList.remove('locked', 'completed');
+                
+                if (ring <= pathProgress) {
+                    // Completed
+                    label.classList.add('completed');
+                } else if (ring === pathProgress + 1) {
+                    // Active - no special class
+                    // Keep default brightness
+                } else {
+                    // Locked
+                    label.classList.add('locked');
+                }
+            });
+        }
+        
+        function updateProgressDisplay() {
+            const progress = boardProgress[currentBoard];
+            
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`progress${i}`).textContent = `${progress.paths[i]}/5`;
+            }
+            
+            const allComplete = progress.paths.every(p => p === 5);
+            const statusElement = document.getElementById('centerStatus');
+            
+            if (progress.centerCompleted) {
+                statusElement.innerHTML = '<span style="color: #2ecc71;">✓ Voltooid!</span> 🎉';
+            } else if (allComplete) {
+                statusElement.innerHTML = '<span style="color: #ffd700;">▶ Beschikbaar!</span> Klik op het centrum!';
+            } else {
+                statusElement.innerHTML = '<span style="color: #666;">🔒 Vergrendeld</span> (voltooi alle paden)';
+            }
+        }
+        
+        function updateUnlockStates() {
+            // Check completed rings for easy board
+            const easyRingsCompleted = Math.min(...boardProgress.easy.paths);
+            
+            if (easyRingsCompleted >= UNLOCK_REQUIREMENTS.medium) {
+                document.getElementById('mediumTab').classList.remove('locked');
+                document.getElementById('mediumTab').querySelector('.lock-icon').style.display = 'none';
+            }
+            
+            // Check completed rings for medium board
+            const mediumRingsCompleted = Math.min(...boardProgress.medium.paths);
+            
+            if (mediumRingsCompleted >= UNLOCK_REQUIREMENTS.hard) {
+                document.getElementById('hardTab').classList.remove('locked');
+                document.getElementById('hardTab').querySelector('.lock-icon').style.display = 'none';
+            }
+            
+            // Update unlock messages
+            document.getElementById('mediumReq').textContent = UNLOCK_REQUIREMENTS.medium;
+            document.getElementById('hardReq').textContent = UNLOCK_REQUIREMENTS.hard;
+        }
+        
+        function switchBoard(boardType) {
+            // Check unlock
+            if (boardType === 'medium') {
+                const easyRingsCompleted = Math.min(...boardProgress.easy.paths);
+                if (easyRingsCompleted < UNLOCK_REQUIREMENTS.medium) {
+                    alert(`Medium spiraal is nog vergrendeld! Voltooi eerst ${UNLOCK_REQUIREMENTS.medium} ringen (elk met 3 paden) van Easy spiraal.`);
+                    return;
+                }
+            }
+            
+            if (boardType === 'hard') {
+                const mediumRingsCompleted = Math.min(...boardProgress.medium.paths);
+                if (mediumRingsCompleted < UNLOCK_REQUIREMENTS.hard) {
+                    alert(`Hard spiraal is nog vergrendeld! Voltooi eerst ${UNLOCK_REQUIREMENTS.hard} ringen (elk met 3 paden) van Medium spiraal.`);
+                    return;
+                }
+            }
+            
+            document.querySelectorAll('.board-container').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(boardType + 'Board').classList.add('active');
+            document.querySelector(`.tab-button.${boardType}`).classList.add('active');
+            
+            currentBoard = boardType;
+            updateProgressDisplay();
+        }
+        
+        function handleSegmentClick(path, ring) {
+            const progress = boardProgress[currentBoard];
+            if (ring === progress.paths[path] + 1) {
+                completePath(path);
+            }
+        }
+        
+        function completePath(pathIndex) {
+            const progress = boardProgress[currentBoard];
+            
+            if (progress.paths[pathIndex] < 10) {
+                progress.paths[pathIndex]++;
+                updateBoardState(currentBoard, currentBoard + 'Svg');
+                updateProgressDisplay();
+                updateUnlockStates();
+            }
+        }
+        
+        function handleCenterClick() {
+            const progress = boardProgress[currentBoard];
+            const allComplete = progress.paths.every(p => p === 10);
+            
+            if (allComplete && !progress.centerCompleted) {
+                progress.centerCompleted = true;
+                updateBoardState(currentBoard, currentBoard + 'Svg');
+                updateProgressDisplay();
+                
+                setTimeout(() => {
+                    alert(`🎉 ${currentBoard.toUpperCase()} SPIRAAL VOLTOOID!`);
+                }, 300);
+            }
+        }
+        
+        function resetAll() {
+            boardProgress = {
+                easy: { paths: [0, 0, 0], centerCompleted: false },
+                medium: { paths: [0, 0, 0], centerCompleted: false },
+                hard: { paths: [0, 0, 0], centerCompleted: false }
+            };
+            
+            updateBoardState('easy', 'easySvg');
+            updateBoardState('medium', 'mediumSvg');
+            updateBoardState('hard', 'hardSvg');
+            updateProgressDisplay();
+            
+            document.getElementById('mediumTab').classList.add('locked');
+            document.getElementById('mediumTab').querySelector('.lock-icon').style.display = 'inline';
+            document.getElementById('hardTab').classList.add('locked');
+            document.getElementById('hardTab').querySelector('.lock-icon').style.display = 'inline';
+            
+            switchBoard('easy');
+        }
+        
+        // Initialize
+        initializeBoard('easy', 'easySvg');
+        initializeBoard('medium', 'mediumSvg');
+        initializeBoard('hard', 'hardSvg');
+        
+        updateBoardState('easy', 'easySvg');
+        updateBoardState('medium', 'mediumSvg');
+        updateBoardState('hard', 'hardSvg');
+        updateProgressDisplay();
+    </script>
+</body>
+</html>
