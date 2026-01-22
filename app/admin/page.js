@@ -83,6 +83,30 @@ export default function AdminPage() {
     }
   }, [isAuthenticated])
 
+  // Auto-refresh submissions every minute to pick up new submissions
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    const interval = setInterval(() => {
+      silentRefreshSubmissions()
+    }, 60 * 1000) // 1 minute
+
+    return () => clearInterval(interval)
+  }, [isAuthenticated])
+
+  // Silent refresh without loading state
+  async function silentRefreshSubmissions() {
+    try {
+      const res = await fetch('/api/admin/submissions')
+      if (res.ok) {
+        const data = await res.json()
+        setSubmissions(data.submissions || [])
+      }
+    } catch (error) {
+      console.error('Error refreshing submissions:', error)
+    }
+  }
+
   async function loadData() {
     setLoading(true)
     await Promise.all([loadTiles(), loadTeams(), loadSubmissions()])
