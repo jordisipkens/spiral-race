@@ -1,251 +1,166 @@
-# 🎮 Spiraal Race - Spelregels
+# Spiraal Race - Spelregels
 
 ## Basis Concept
 
-Spiraal Race is een competitief OSRS clan event waarbij teams challenges voltooien op spiraalvormige boards. Het spel combineert strategie (welk pad eerst?), teamwork (wie doet wat?), en OSRS skills.
+Spiraal Race is een competitief OSRS clan event waarbij teams challenges voltooien op spiraalvormige boards. Teams uploaden screenshot bewijs, en admins keuren de submissions goed of af.
 
-## 🎯 Board Systeem
+## Board Systeem
 
 ### Drie Progressive Boards
 
-**⚡ Easy Board (Blauw/Turquoise)**
+**Easy Board (Blauw)**
 - Altijd beschikbaar vanaf start
-- Simpele challenges (bijv. "Kill 50 Goblins", "Mine 100 Iron ore")
-- Sneller te voltooien
-- Unlock requirement voor Medium: **3 ringen voltooid**
+- Simpele challenges
+- 10 punten per tile, 100 voor center
 
-**⚔️ Medium Board (Oranje/Goud)**
+**Medium Board (Oranje)**
 - Unlocked na 3 ringen Easy
-- Middelmatige challenges (bijv. "Kill Barrows brother", "Cook 200 sharks")
-- Meer tijdsinvestering
-- Unlock requirement voor Hard: **3 ringen voltooid**
+- Middelmatige challenges
+- 25 punten per tile, 200 voor center
 
-**💀 Hard Board (Rood/Paars)**
+**Hard Board (Rood)**
 - Unlocked na 3 ringen Medium
-- Zware challenges (bijv. "Complete ToB", "Get unique drop")
-- Langdurige grind
-- Hoogste punten
+- Zware challenges
+- 50 punten per tile, 500 voor center
 
 ### Ring Structuur
 
-Elk board heeft **5 ringen**:
-- Ring 1 (buitenste) → Ring 2 → Ring 3 → Ring 4 → Ring 5 (binnen)
-- Elke ring heeft **3 paden** (segmenten)
-- **Totaal per board**: 15 tiles + 1 centrum = 16 tiles
+Elk board heeft **5 ringen** met **3 parallelle paden**:
+- Ring 1 (buitenste) → Ring 5 (binnenste)
+- Pad 1, 2, 3 kunnen tegelijk bewerkt worden
+- **15 tiles** + **1 center** = 16 tiles per board
 
-## 🎲 Gameplay Mechanics
+## Progressie Regels
 
-### Parallelle Paden
+### Per Pad
+- Ring 1 moet voltooid zijn voor ring 2 unlocked
+- Lineaire progressie: 1 → 2 → 3 → 4 → 5
 
-Teams kunnen **tegelijk aan alle 3 paden werken**:
-- **Pad 1, 2, 3** zijn onafhankelijk van elkaar
-- Elk pad heeft lineaire progressie (ring 1→2→3→4→5)
-- Je kan bijv. Pad 1 ring 3 doen terwijl Pad 2 nog op ring 1 zit
-
-**Voorbeeld scenario:**
-```
-Pad 1: ✓ ✓ ✓ ▶ 🔒  (Ring 4 actief)
-Pad 2: ✓ ✓ ▶ 🔒 🔒  (Ring 3 actief)
-Pad 3: ✓ ▶ 🔒 🔒 🔒  (Ring 2 actief)
-```
-
-### Progressie Regels
-
-**Per Pad:**
-- Je moet ring 1 voltooien voor ring 2 unlocked
-- Je moet ring 2 voltooien voor ring 3 unlocked
-- Etc.
-
-**Tussen Paden:**
+### Tussen Paden
 - Paden zijn ONAFHANKELIJK
 - Pad 2 hoeft niet te wachten op Pad 1
-- Strategische keuze: focus op 1 pad of spreek het uit?
+- Strategische keuze: focus vs spreiding
 
-**Centrum:**
-- Unlocked als **alle 3 paden** op ring 5 zijn
-- Alle 15 tiles moeten voltooid zijn
-- Centrum is vaak de grootste challenge
+### Center Tile
+- Unlocked als alle 3 paden op ring 5 zijn
+- Alle 15 outer tiles moeten compleet zijn
 
 ### Board Unlocking
+- Een ring is "voltooid" als alle 3 paden die ring bereikt hebben
+- Medium: 3 ringen Easy = 9 tiles minimum
+- Hard: 3 ringen Medium = 9 tiles minimum
 
-**Ring Completion:**
-- Een ring is "voltooid" als het **langzaamste pad** die ring bereikt heeft
-- Voorbeeld: Pad 1=ring 4, Pad 2=ring 3, Pad 3=ring 5 → 3 ringen voltooid
+## Evidence Submission
 
-**Unlock Thresholds:**
-```
-Easy Board → Medium Board: 3 ringen voltooid
-Medium Board → Hard Board: 3 ringen voltooid
-```
+### Hoe Het Werkt
 
-Dit betekent: minimaal **9 tiles** (3 ringen × 3 paden) per board unlock.
+1. **Klik op actieve tile** - Opent tile modal
+2. **Upload screenshot** - Selecteer afbeelding (max 5MB)
+3. **Submit** - Bewijs gaat naar admin queue
+4. **Wacht op review** - Admin keurt goed of af
+5. **Tile compleet** - Bij goedkeuring krijg je de punten
 
-## 📸 Bewijs Systeem
+### Wat Te Uploaden
 
-### Foto Submissions
+**Goed bewijs:**
+- Duidelijke OSRS screenshot
+- Relevante info zichtbaar (kill count, drop, etc.)
+- Geen edits of manipulatie
 
-Voor elke tile moet bewijs ingediend worden:
-- **Screenshot** van completed challenge
-- Duidelijk zichtbaar in-game bewijs
-- Team identifier (ingame name)
-
-**Voorbeelden goed bewijs:**
-- Loot drop screenshot (met item name)
-- Collection log screenshot (met unlock)
-- Quest complete screen
-- Kill count screenshot
-
-**Voorbeelden slecht bewijs:**
-- Blurry foto
-- Geen ingame name zichtbaar
-- Photoshopped bewijs
+**Slecht bewijs:**
+- Blurry of onduidelijk
 - Verkeerde challenge
+- Screenshot van iemand anders
 
-### Approval Process
+### Submission Status
 
-**Automatisch (toekomst):**
-- OCR scant screenshot
-- Herkent OSRS UI elements
-- Valideert specifieke drops/achievements
-- Auto-approve als match
+| Status | Betekenis |
+|--------|-----------|
+| Pending | Wacht op admin review |
+| Approved | Goedgekeurd, tile compleet |
+| Rejected | Afgekeurd, probeer opnieuw |
 
-**Handmatig:**
-- Admin bekijkt queue
-- Controleert bewijs
-- Approve/Reject met reden
-- Notificatie naar team
+### Rejected Submissions
+- Je krijgt een reden te zien waarom
+- Je kan opnieuw proberen met beter bewijs
+- Geen limiet op aantal pogingen
 
-## 🏆 Punten Systeem
+### Multiple Submissions
+- Je kan meerdere screenshots per tile uploaden
+- Handig voor tiles die meerdere bewijzen nodig hebben
+- Bij pending submission krijg je waarschuwing
 
-### Tile Waarden (admin instelbaar)
+## Visuele Indicatoren
 
-**Standaard punten structuur:**
-- Easy tiles: 10-20 punten
-- Medium tiles: 25-50 punten  
-- Hard tiles: 75-150 punten
-- Centrum tiles: 200-500 punten
+| Indicator | Betekenis |
+|-----------|-----------|
+| Grijze tile (25% opacity) | Nog niet beschikbaar |
+| Gouden rand + glow | Actief, kan gecompleet worden |
+| Gele rand + klok icoon | Pending submission |
+| Vervagde tile (40% opacity) | Voltooid |
 
-**Bonussen:**
-- First completion bonus: +50%
-- Speed bonus: voltooi binnen X tijd
-- Perfect board: alle tiles zonder rejects
+## Punten Systeem
 
-### Leaderboard
+### Standaard Punten
 
-Teams worden gerangschikt op:
-1. **Totaal punten** (primary)
-2. **Voltooiings tijd** (tiebreaker)
-3. **Approval rate** (tiebreaker)
+| Board | Tile Punten | Center Punten |
+|-------|-------------|---------------|
+| Easy | 10 | 100 |
+| Medium | 25 | 200 |
+| Hard | 50 | 500 |
 
-## ⚖️ Regels & Restrictions
+### Totaal Mogelijke Punten
+- Easy: (15 × 10) + 100 = **250 punten**
+- Medium: (15 × 25) + 200 = **575 punten**
+- Hard: (15 × 50) + 500 = **1250 punten**
+- **Totaal: 2075 punten**
 
-### Team Play
+*Punten kunnen door admin aangepast worden per tile*
 
-**Toegestaan:**
-- Teamwork binnen je eigen team
-- Resources delen tussen teamleden
-- Verschillende members doen verschillende tiles
-
-**Niet toegestaan:**
-- Hulp van buiten je team
-- Alt accounts gebruiken (tenzij toegestaan door admin)
-- Bewijs stelen van andere teams
-- Sabotage van andere teams
-
-### Fair Play
-
-**Valid bewijs:**
-- Zelf behaald tijdens event periode
-- Eigen ingame character
-- Niet gemanipuleerd
-
-**Invalid bewijs:**
-- Pre-event achievements
-- Andermans screenshots
-- Photoshop/edits
-- Gecheate kills
-
-### Admin Discretie
-
-Admins kunnen:
-- Tiles disqualificeren
-- Punten aanpassen
-- Teams waarschuwen/diskwalificeren
-- Regels aanpassen tijdens event
-
-## 🎯 Strategie Tips
+## Tips & Strategie
 
 ### Pad Prioritering
 
-**Focus Strategy:**
-- Pick 1 pad en voltooi die volledig
-- Unlock centrum zo snel mogelijk
-- Risico: geen spreiding
+**Focus Strategy**
+- Voltooi 1 pad helemaal
+- Unlock center zo snel mogelijk
+- Risico: langzaam naar volgende board
 
-**Balanced Strategy:**
+**Balanced Strategy**
 - Werk aan alle 3 paden gelijk
 - Unlock volgende board sneller
-- Risico: langzamer tot centrum
-
-**Sprint Strategy:**
-- Focus op snelle tiles eerst
-- Maximize punten/uur
-- Laat moeilijke tiles voor later
+- Risico: langzamer tot center
 
 ### Team Coördinatie
 
-**Role Assignment:**
-- Wie doet combat challenges?
-- Wie doet skilling challenges?
-- Wie doet collection log grinds?
+- Verdeel paden onder teamleden
+- Combat spelers → combat tiles
+- Skillers → skilling tiles
+- Deel resources en info
 
-**Resource Sharing:**
-- GP pools voor expensive tasks
-- Supply runs voor anderen
-- Information sharing (drop rates, methods)
-
-## 📅 Event Timeline (voorbeeld)
-
-**Week 1:**
-- Teams krijgen toegang tot Easy Board
-- Focus op snelle tiles
-- Unlock Medium voor top teams
-
-**Week 2:**
-- Medium Board actief voor meeste teams
-- Hard Board unlocked voor leaders
-- Midpoint leaderboard check
-
-**Week 3:**
-- Final push naar board completion
-- Last minute submissions
-- Event eindigt op vastgesteld tijdstip
-
-**Post-Event:**
-- Final leaderboard freeze
-- Admin review van disputed tiles
-- Winners announcement
-
-## ❓ FAQ
+## FAQ
 
 **Q: Kunnen we tiles overslaan?**
-A: Nee, lineaire progressie per pad is verplicht.
+A: Nee, lineaire progressie per pad verplicht.
 
 **Q: Wat als bewijs rejected wordt?**
-A: Probeer opnieuw, je houdt toegang tot die tile.
-
-**Q: Kunnen we tiles doen voor het event start?**
-A: Nee, alleen achievements tijdens event periode tellen.
-
-**Q: Hoeveel tijd hebben we per tile?**
-A: Geen limiet per tile, wel overall event deadline.
+A: Upload nieuw bewijs, je houdt toegang tot die tile.
 
 **Q: Kunnen we van board switchen?**
-A: Ja! Als je Medium unlocked hebt, kan je heen en weer tussen Easy en Medium.
+A: Ja! Tussen unlocked boards kun je heen en weer.
 
-**Q: Wat als 2 teams gelijk eindigen?**
-A: Tiebreaker op voltooiings tijd, dan approval rate.
+**Q: Hoeveel tijd voor een tile?**
+A: Geen limiet per tile, wel overall event deadline.
+
+**Q: Wie keurt submissions goed?**
+A: Clan admins via het admin panel.
+
+**Q: Kan ik mijn submission zien?**
+A: Ja, klik op de tile om je uploads te zien.
+
+**Q: Hoe snel worden submissions gereviewed?**
+A: Admin panel refresht elke minuut, review hangt af van beschikbaarheid admins.
 
 ---
 
-**Veel succes en may RNG be with you! 🎲**
+**Veel succes en may RNG be with you!**
