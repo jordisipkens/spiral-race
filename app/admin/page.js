@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import SubmissionCard from '../../components/SubmissionCard'
 
 const BOARDS = ['easy', 'medium', 'hard']
 const BOARD_COLORS = {
@@ -27,6 +28,8 @@ export default function AdminPage() {
   const [editingTeam, setEditingTeam] = useState(null)
   const [newTeam, setNewTeam] = useState({ name: '', slug: '' })
   const [message, setMessage] = useState(null)
+  const [submissions, setSubmissions] = useState([])
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false)
 
   // Check auth on mount
   useEffect(() => {
@@ -82,8 +85,51 @@ export default function AdminPage() {
 
   async function loadData() {
     setLoading(true)
-    await Promise.all([loadTiles(), loadTeams()])
+    await Promise.all([loadTiles(), loadTeams(), loadSubmissions()])
     setLoading(false)
+  }
+
+  async function loadSubmissions() {
+    setLoadingSubmissions(true)
+    try {
+      const res = await fetch('/api/admin/submissions')
+      if (res.ok) {
+        const data = await res.json()
+        setSubmissions(data.submissions || [])
+      }
+    } catch (error) {
+      console.error('Error loading submissions:', error)
+    }
+    setLoadingSubmissions(false)
+  }
+
+  async function handleSubmissionAction(submissionId, action, rejectionReason = null) {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/submissions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: submissionId,
+          action,
+          rejection_reason: rejectionReason
+        })
+      })
+
+      if (res.ok) {
+        setMessage({
+          type: 'success',
+          text: `Submission ${action === 'approve' ? 'approved' : 'rejected'}!`
+        })
+        loadSubmissions()
+      } else {
+        const data = await res.json()
+        setMessage({ type: 'error', text: data.error || 'Action failed' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Action failed' })
+    }
+    setSaving(false)
   }
 
   async function loadTiles() {
@@ -403,6 +449,20 @@ export default function AdminPage() {
         >
           👥 Teams ({teams.length})
         </button>
+        <button
+          onClick={() => setActiveSection('submissions')}
+          style={{
+            ...styles.sectionTab,
+            background: activeSection === 'submissions' ? '#e67e22' : '#2c3e50',
+            borderColor: activeSection === 'submissions' ? '#ffd700' : 'transparent',
+            position: 'relative'
+          }}
+        >
+          📋 Submissions
+          {submissions.length > 0 && (
+            <span style={styles.badge}>{submissions.length}</span>
+          )}
+        </button>
       </div>
 
       {/* TILES SECTION */}
@@ -625,6 +685,51 @@ export default function AdminPage() {
           </div>
         </>
       )}
+
+      {/* SUBMISSIONS SECTION */}
+      {activeSection === 'submissions' && (
+        <>
+          <div style={styles.submissionsHeader}>
+            <h3 style={{ color: '#fff', margin: 0 }}>
+              Pending Submissions ({submissions.length})
+            </h3>
+            <button
+              onClick={loadSubmissions}
+              disabled={loadingSubmissions}
+              style={styles.refreshBtn}
+            >
+              {loadingSubmissions ? 'Loading...' : 'Refresh'}
+            </button>
+          </div>
+
+          {loadingSubmissions ? (
+            <p style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>
+              Loading submissions...
+            </p>
+          ) : submissions.length === 0 ? (
+            <div style={styles.emptyState}>
+              <p style={{ color: '#888', fontSize: '1.1rem' }}>
+                No pending submissions
+              </p>
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                Teams will submit evidence here for review
+              </p>
+            </div>
+          ) : (
+            <div style={styles.submissionsList}>
+              {submissions.map(submission => (
+                <SubmissionCard
+                  key={submission.id}
+                  submission={submission}
+                  onApprove={() => handleSubmissionAction(submission.id, 'approve')}
+                  onReject={(reason) => handleSubmissionAction(submission.id, 'reject', reason)}
+                  saving={saving}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </main>
   )
 }
@@ -843,5 +948,47 @@ const styles = {
     color: 'white',
     cursor: 'pointer',
     fontSize: '0.9rem'
+  },
+  badge: {
+    position: 'absolute',
+    top: '-8px',
+    right: '-8px',
+    background: '#e74c3c',
+    color: 'white',
+    borderRadius: '50%',
+    width: '22px',
+    height: '22px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.75rem',
+    fontWeight: 'bold'
+  },
+  submissionsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem'
+  },
+  refreshBtn: {
+    padding: '0.5rem 1rem',
+    background: '#3498db',
+    border: 'none',
+    borderRadius: '4px',
+    color: 'white',
+    cursor: 'pointer',
+    fontSize: '0.9rem'
+  },
+  emptyState: {
+    textAlign: 'center',
+    padding: '3rem',
+    background: 'rgba(255,255,255,0.02)',
+    borderRadius: '12px',
+    border: '1px dashed rgba(255,255,255,0.1)'
+  },
+  submissionsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem'
   }
 }

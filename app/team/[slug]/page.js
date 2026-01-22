@@ -25,11 +25,61 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [submissions, setSubmissions] = useState([])
 
   // Load team and data
   useEffect(() => {
     loadTeamData()
   }, [slug])
+
+  // Auto-refresh every 3 minutes to pick up approved/rejected submissions
+  useEffect(() => {
+    if (!team) return
+
+    const interval = setInterval(() => {
+      refreshData()
+    }, 3 * 60 * 1000) // 3 minutes
+
+    return () => clearInterval(interval)
+  }, [team, slug])
+
+  // Silent refresh without loading state (for auto-refresh)
+  async function refreshData() {
+    if (!team) return
+
+    // Reload progress
+    const { data: progressData } = await supabase
+      .from('progress')
+      .select('*, tiles(*)')
+      .eq('team_id', team.id)
+
+    if (progressData) {
+      const newProgress = {
+        easy: { paths: [0, 0, 0], centerCompleted: false },
+        medium: { paths: [0, 0, 0], centerCompleted: false },
+        hard: { paths: [0, 0, 0], centerCompleted: false }
+      }
+
+      progressData.forEach(p => {
+        const tile = p.tiles
+        if (!tile) return
+
+        if (tile.is_center) {
+          newProgress[tile.board].centerCompleted = true
+        } else {
+          const currentMax = newProgress[tile.board].paths[tile.path]
+          if (tile.ring > currentMax) {
+            newProgress[tile.board].paths[tile.path] = tile.ring
+          }
+        }
+      })
+
+      setProgress(newProgress)
+    }
+
+    // Reload submissions
+    await loadSubmissions(team.id)
+  }
 
   async function loadTeamData() {
     setLoading(true)
@@ -97,7 +147,22 @@ export default function TeamPage() {
       setProgress(newProgress)
     }
 
+    // Load submissions for this team
+    await loadSubmissions(teamData.id)
+
     setLoading(false)
+  }
+
+  async function loadSubmissions(teamId) {
+    const { data: submissionsData } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('submitted_at', { ascending: false })
+
+    if (submissionsData) {
+      setSubmissions(submissionsData)
+    }
   }
 
   // Calculate unlocked boards
@@ -173,6 +238,13 @@ export default function TeamPage() {
     const centerTile = tiles[activeBoard].find(t => t.is_center)
     if (centerTile) {
       saveTileProgress(centerTile)
+    }
+  }
+
+  // Handle when a new submission is made
+  const handleSubmissionComplete = () => {
+    if (team) {
+      loadSubmissions(team.id)
     }
   }
 
@@ -303,6 +375,9 @@ export default function TeamPage() {
         onTileComplete={handleTileComplete}
         onCenterComplete={handleCenterComplete}
         disabled={isBoardLocked}
+        teamId={team?.id}
+        submissions={submissions}
+        onSubmissionComplete={handleSubmissionComplete}
       />
 
       {/* Unlock info */}

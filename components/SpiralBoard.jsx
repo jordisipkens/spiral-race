@@ -78,7 +78,7 @@ function getLabelPosition(innerRadius, outerRadius, startAngle, endAngle) {
   }
 }
 
-function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled }) {
+function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled, hasPendingSubmission }) {
   const ringOuter = OUTER_RADIUS - ((ring - 1) * RING_THICKNESS)
   const ringInner = ringOuter - RING_THICKNESS
   const rotationOffset = (ring - 1) * 18
@@ -109,8 +109,8 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
       <path
         d={createSegmentPath(ringInner, ringOuter, startAngle, endAngle)}
         fill={`url(#${gradientId})`}
-        stroke={state === 'active' && !disabled ? '#ffd700' : '#1a1a2e'}
-        strokeWidth={state === 'active' && !disabled ? 4 : 2}
+        stroke={hasPendingSubmission ? '#f1c40f' : state === 'active' && !disabled ? '#ffd700' : '#1a1a2e'}
+        strokeWidth={hasPendingSubmission ? 4 : state === 'active' && !disabled ? 4 : 2}
         style={{
           cursor: tile ? 'pointer' : 'default',
           opacity: state === 'locked' ? 0.25 : state === 'completed' ? 0.4 : disabled ? 0.5 : 1,
@@ -134,6 +134,16 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
       >
         {tile?.title || `R${ring}P${path + 1}`}
       </text>
+      {hasPendingSubmission && (
+        <text
+          x={labelPos.x + 18}
+          y={labelPos.y - 12}
+          fontSize="10"
+          style={{ pointerEvents: 'none' }}
+        >
+          ⏳
+        </text>
+      )}
     </g>
   )
 }
@@ -214,7 +224,10 @@ export default function SpiralBoard({
   initialCenterCompleted = false,
   onTileComplete,
   onCenterComplete,
-  disabled = false
+  disabled = false,
+  teamId,
+  submissions = [],
+  onSubmissionComplete
 }) {
   const [progress, setProgress] = useState(initialProgress)
   const [centerCompleted, setCenterCompleted] = useState(initialCenterCompleted)
@@ -293,6 +306,10 @@ export default function SpiralBoard({
   const segments = []
   for (let ring = 1; ring <= NUM_RINGS; ring++) {
     for (let path = 0; path < 3; path++) {
+      const tile = tileMap[`${ring}-${path}`]
+      const hasPendingSubmission = tile && submissions.some(
+        s => s.tile_id === tile.id && s.status === 'pending'
+      )
       segments.push(
         <Segment
           key={`${ring}-${path}`}
@@ -302,8 +319,9 @@ export default function SpiralBoard({
           progress={progress}
           onClick={handleSegmentClick}
           onShowDetails={handleShowDetails}
-          tile={tileMap[`${ring}-${path}`]}
+          tile={tile}
           disabled={disabled}
+          hasPendingSubmission={hasPendingSubmission}
         />
       )
     }
@@ -317,9 +335,16 @@ export default function SpiralBoard({
           tile={modalData.tile}
           isCompleted={modalData.isCompleted}
           isLocked={modalData.isLocked}
-          onComplete={handleModalComplete}
-          onClose={() => setModalData(null)}
+          onClose={(shouldRefresh) => {
+            setModalData(null)
+            if (shouldRefresh && onSubmissionComplete) {
+              onSubmissionComplete()
+            }
+          }}
           disabled={disabled}
+          onRefresh={onSubmissionComplete}
+          teamId={teamId}
+          submissions={submissions}
         />
       )}
 
