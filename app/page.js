@@ -5,11 +5,6 @@ import { supabase } from '../lib/supabase'
 import SpiralBoard from '../components/SpiralBoard'
 import BoardTabs from '../components/BoardTabs'
 
-const UNLOCK_REQUIREMENTS = {
-  medium: 3, // Complete 3 rings on easy
-  hard: 3    // Complete 3 rings on medium
-}
-
 export default function Home() {
   const [activeBoard, setActiveBoard] = useState('easy')
   const [tiles, setTiles] = useState({ easy: [], medium: [], hard: [] })
@@ -19,23 +14,6 @@ export default function Home() {
     hard: { paths: [0, 0, 0], centerCompleted: false }
   })
   const [loading, setLoading] = useState(true)
-
-  // Calculate unlocked boards
-  const getUnlockedBoards = () => {
-    const unlocked = ['easy']
-
-    const easyMinRings = Math.min(...progress.easy.paths)
-    if (easyMinRings >= UNLOCK_REQUIREMENTS.medium) {
-      unlocked.push('medium')
-    }
-
-    const mediumMinRings = Math.min(...progress.medium.paths)
-    if (mediumMinRings >= UNLOCK_REQUIREMENTS.hard) {
-      unlocked.push('hard')
-    }
-
-    return unlocked
-  }
 
   // Load tiles from database
   useEffect(() => {
@@ -67,10 +45,7 @@ export default function Home() {
   }, [])
 
   const handleBoardChange = (boardType) => {
-    const unlocked = getUnlockedBoards()
-    if (unlocked.includes(boardType)) {
-      setActiveBoard(boardType)
-    }
+    setActiveBoard(boardType)
   }
 
   const handleTileComplete = (tile, path, ring) => {
@@ -114,7 +89,6 @@ export default function Home() {
     )
   }
 
-  const unlockedBoards = getUnlockedBoards()
   const currentProgress = progress[activeBoard]
 
   return (
@@ -145,7 +119,6 @@ export default function Home() {
       <BoardTabs
         activeBoard={activeBoard}
         onBoardChange={handleBoardChange}
-        unlockedBoards={unlockedBoards}
       />
 
       {/* Board Title */}
@@ -169,33 +142,6 @@ export default function Home() {
         onTileComplete={handleTileComplete}
         onCenterComplete={handleCenterComplete}
       />
-
-      {/* Unlock info */}
-      {activeBoard === 'easy' && !unlockedBoards.includes('medium') && (
-        <p style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(52, 152, 219, 0.2)',
-          borderRadius: '8px',
-          color: '#3498db'
-        }}>
-          Unlock Medium: Complete {UNLOCK_REQUIREMENTS.medium} rings (all 3 paths per ring)
-        </p>
-      )}
-
-      {activeBoard === 'medium' && !unlockedBoards.includes('hard') && (
-        <p style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(243, 156, 18, 0.2)',
-          borderRadius: '8px',
-          color: '#f39c12'
-        }}>
-          Unlock Hard: Complete {UNLOCK_REQUIREMENTS.hard} rings (all 3 paths per ring)
-        </p>
-      )}
     </main>
   )
 }

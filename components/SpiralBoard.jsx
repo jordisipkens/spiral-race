@@ -85,12 +85,16 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
   const startAngle = rotationOffset + (path * 120)
   const endAngle = startAngle + 120
 
-  const pathProgress = progress[path]
+  // Ring-based progression: all tiles in a ring must be complete before next ring unlocks
+  const minProgress = Math.min(progress[0], progress[1], progress[2])
+  const activeRing = minProgress + 1
 
   let state = 'locked'
-  if (ring <= pathProgress) {
+  if (ring <= progress[path]) {
+    // This specific tile is completed
     state = 'completed'
-  } else if (ring === pathProgress + 1) {
+  } else if (ring === activeRing) {
+    // All tiles in the active ring are available
     state = 'active'
   }
 
@@ -348,30 +352,6 @@ export default function SpiralBoard({
         />
       )}
 
-      {/* Locked overlay message */}
-      {disabled && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 10,
-          background: 'rgba(0,0,0,0.8)',
-          padding: '1rem 2rem',
-          borderRadius: '8px',
-          border: '2px solid #ffd700',
-          textAlign: 'center'
-        }}>
-          <span style={{ fontSize: '2rem' }}>🔒</span>
-          <p style={{ color: '#ffd700', margin: '0.5rem 0 0', fontWeight: 'bold' }}>
-            Board Locked
-          </p>
-          <p style={{ color: '#aaa', margin: '0.25rem 0 0', fontSize: '0.9rem' }}>
-            Complete the previous board first
-          </p>
-        </div>
-      )}
-
       <svg
         viewBox="0 0 750 750"
         style={{
@@ -457,9 +437,12 @@ export default function SpiralBoard({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'relative' }}>
           {[0, 1, 2].map(path => {
-            const nextRing = progress[path] + 1
-            const isComplete = nextRing > NUM_RINGS
-            const activeTile = !isComplete ? tileMap[`${nextRing}-${path}`] : null
+            // Ring-based: active ring is determined by minimum progress across all paths
+            const minProgress = Math.min(progress[0], progress[1], progress[2])
+            const activeRing = minProgress + 1
+            const isAllComplete = minProgress >= NUM_RINGS
+            const isThisPathComplete = progress[path] >= activeRing
+            const activeTile = !isAllComplete ? tileMap[`${activeRing}-${path}`] : null
             const pathColors = ['#3498db', '#e67e22', '#c0392b']
             const pathGradients = [
               'linear-gradient(90deg, rgba(52,152,219,0.2) 0%, transparent 100%)',
@@ -468,13 +451,12 @@ export default function SpiralBoard({
             ]
             const pathIcons = ['⚡', '⚔️', '💀']
 
-            // Determine the tile to show in modal
-            const tileForModal = activeTile
-            const tileState = isComplete ? 'completed' : 'active'
+            // Determine the tile state for display
+            const tileState = isAllComplete || isThisPathComplete ? 'completed' : 'active'
 
             const handleRowClick = () => {
-              if (activeTile && !disabled) {
-                handleShowDetails(activeTile, tileState, path, nextRing)
+              if (activeTile && !disabled && !isThisPathComplete) {
+                handleShowDetails(activeTile, tileState, path, activeRing)
               }
             }
 
@@ -486,16 +468,16 @@ export default function SpiralBoard({
                   display: 'flex',
                   alignItems: 'center',
                   padding: '0.875rem 1rem',
-                  background: isComplete
+                  background: isAllComplete || isThisPathComplete
                     ? 'linear-gradient(90deg, rgba(46,204,113,0.15) 0%, transparent 100%)'
                     : pathGradients[path],
                   borderRadius: '8px',
-                  border: `1px solid ${isComplete ? 'rgba(46,204,113,0.3)' : `${pathColors[path]}33`}`,
+                  border: `1px solid ${isAllComplete || isThisPathComplete ? 'rgba(46,204,113,0.3)' : `${pathColors[path]}33`}`,
                   transition: 'all 0.3s ease',
-                  boxShadow: isComplete
+                  boxShadow: isAllComplete || isThisPathComplete
                     ? '0 0 15px rgba(46,204,113,0.2)'
                     : `0 0 15px ${pathColors[path]}22`,
-                  cursor: activeTile && !disabled ? 'pointer' : 'default'
+                  cursor: activeTile && !disabled && !isThisPathComplete ? 'pointer' : 'default'
                 }}
               >
                 {/* Path indicator */}
@@ -503,50 +485,52 @@ export default function SpiralBoard({
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  background: isComplete
+                  background: isAllComplete || isThisPathComplete
                     ? 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)'
                     : `linear-gradient(135deg, ${pathColors[path]} 0%, ${pathColors[path]}99 100%)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '1.25rem',
-                  boxShadow: isComplete
+                  boxShadow: isAllComplete || isThisPathComplete
                     ? '0 0 20px rgba(46,204,113,0.5)'
                     : `0 0 20px ${pathColors[path]}44`,
                   flexShrink: 0
                 }}>
-                  {isComplete ? '✓' : pathIcons[path]}
+                  {isAllComplete || isThisPathComplete ? '✓' : pathIcons[path]}
                 </div>
 
                 {/* Task info */}
                 <div style={{ flex: 1, marginLeft: '1rem' }}>
                   <div style={{
-                    color: isComplete ? '#2ecc71' : pathColors[path],
+                    color: isAllComplete || isThisPathComplete ? '#2ecc71' : pathColors[path],
                     fontSize: '0.75rem',
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
                     marginBottom: '0.25rem',
                     fontWeight: 'bold'
                   }}>
-                    Path {path + 1}
+                    Path {path + 1} {!isAllComplete && `• Ring ${activeRing}`}
                   </div>
                   <div style={{
-                    color: isComplete ? '#2ecc71' : '#fff',
+                    color: isAllComplete || isThisPathComplete ? '#2ecc71' : '#fff',
                     fontSize: '1rem',
-                    fontWeight: isComplete ? 'normal' : 'bold'
+                    fontWeight: isAllComplete || isThisPathComplete ? 'normal' : 'bold'
                   }}>
-                    {isComplete ? (
-                      'Completed!'
+                    {isAllComplete ? (
+                      'All Complete!'
+                    ) : isThisPathComplete ? (
+                      'Done - waiting for other paths'
                     ) : activeTile ? (
                       activeTile.title
                     ) : (
-                      `Ring ${nextRing} - Path ${path + 1}`
+                      `Ring ${activeRing} - Path ${path + 1}`
                     )}
                   </div>
                 </div>
 
                 {/* Points */}
-                {!isComplete && (
+                {!isAllComplete && !isThisPathComplete && (
                   <div style={{
                     background: 'linear-gradient(135deg, rgba(255,215,0,0.2) 0%, rgba(255,140,0,0.2) 100%)',
                     padding: '0.5rem 1rem',

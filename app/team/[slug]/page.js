@@ -6,11 +6,6 @@ import { supabase } from '../../../lib/supabase'
 import SpiralBoard from '../../../components/SpiralBoard'
 import BoardTabs from '../../../components/BoardTabs'
 
-const UNLOCK_REQUIREMENTS = {
-  medium: 3,
-  hard: 3
-}
-
 export default function TeamPage() {
   const params = useParams()
   const slug = params.slug
@@ -165,23 +160,6 @@ export default function TeamPage() {
     }
   }
 
-  // Calculate unlocked boards
-  const getUnlockedBoards = () => {
-    const unlocked = ['easy']
-
-    const easyMinRings = Math.min(...progress.easy.paths)
-    if (easyMinRings >= UNLOCK_REQUIREMENTS.medium) {
-      unlocked.push('medium')
-    }
-
-    const mediumMinRings = Math.min(...progress.medium.paths)
-    if (mediumMinRings >= UNLOCK_REQUIREMENTS.hard) {
-      unlocked.push('hard')
-    }
-
-    return unlocked
-  }
-
   const handleBoardChange = (boardType) => {
     // Allow navigation to any board (for preview)
     setActiveBoard(boardType)
@@ -302,10 +280,8 @@ export default function TeamPage() {
     )
   }
 
-  const unlockedBoards = getUnlockedBoards()
   const currentProgress = progress[activeBoard]
   const totalPoints = calculatePoints()
-  const isBoardLocked = !unlockedBoards.includes(activeBoard)
 
   return (
     <main style={{
@@ -351,7 +327,6 @@ export default function TeamPage() {
       <BoardTabs
         activeBoard={activeBoard}
         onBoardChange={handleBoardChange}
-        unlockedBoards={unlockedBoards}
       />
 
       {/* Board Title */}
@@ -374,64 +349,10 @@ export default function TeamPage() {
         initialCenterCompleted={currentProgress.centerCompleted}
         onTileComplete={handleTileComplete}
         onCenterComplete={handleCenterComplete}
-        disabled={isBoardLocked}
         teamId={team?.id}
         submissions={submissions}
         onSubmissionComplete={handleSubmissionComplete}
       />
-
-      {/* Unlock info */}
-      {activeBoard === 'easy' && !unlockedBoards.includes('medium') && (
-        <p style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(52, 152, 219, 0.2)',
-          borderRadius: '8px',
-          color: '#3498db'
-        }}>
-          Unlock Medium: Complete {UNLOCK_REQUIREMENTS.medium} rings (all 3 paths per ring)
-        </p>
-      )}
-
-      {activeBoard === 'medium' && isBoardLocked && (
-        <p style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(243, 156, 18, 0.2)',
-          borderRadius: '8px',
-          color: '#f39c12'
-        }}>
-          Unlock required: Complete {UNLOCK_REQUIREMENTS.medium} rings on Easy (all 3 paths per ring)
-        </p>
-      )}
-
-      {activeBoard === 'medium' && !isBoardLocked && !unlockedBoards.includes('hard') && (
-        <p style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(243, 156, 18, 0.2)',
-          borderRadius: '8px',
-          color: '#f39c12'
-        }}>
-          Unlock Hard: Complete {UNLOCK_REQUIREMENTS.hard} rings (all 3 paths per ring)
-        </p>
-      )}
-
-      {activeBoard === 'hard' && isBoardLocked && (
-        <p style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(192, 57, 43, 0.2)',
-          borderRadius: '8px',
-          color: '#c0392b'
-        }}>
-          Unlock required: Complete {UNLOCK_REQUIREMENTS.hard} rings on Medium (all 3 paths per ring)
-        </p>
-      )}
     </main>
   )
 }

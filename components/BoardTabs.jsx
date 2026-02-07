@@ -23,8 +23,7 @@ const BOARD_CONFIG = {
 
 export default function BoardTabs({
   activeBoard,
-  onBoardChange,
-  unlockedBoards = ['easy']
+  onBoardChange
 }) {
   return (
     <div style={{
@@ -35,7 +34,6 @@ export default function BoardTabs({
       flexWrap: 'wrap'
     }}>
       {Object.entries(BOARD_CONFIG).map(([boardType, config]) => {
-        const isUnlocked = unlockedBoards.includes(boardType)
         const isActive = activeBoard === boardType
 
         return (
@@ -51,7 +49,6 @@ export default function BoardTabs({
               fontWeight: 'bold',
               borderRadius: '8px',
               cursor: 'pointer',
-              opacity: isUnlocked ? 1 : 0.6,
               transition: 'all 0.3s ease',
               transform: isActive ? 'translateY(-4px)' : 'none',
               boxShadow: isActive
@@ -66,7 +63,6 @@ export default function BoardTabs({
           >
             <span>{config.icon}</span>
             <span>{config.label}</span>
-            {!isUnlocked && <span style={{ marginLeft: '0.5rem' }}>🔒</span>}
           </button>
         )
       })}

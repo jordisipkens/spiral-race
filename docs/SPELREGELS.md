@@ -6,49 +6,49 @@ Spiraal Race is een competitief OSRS clan event waarbij teams challenges voltooi
 
 ## Board Systeem
 
-### Drie Progressive Boards
+### Drie Boards (Altijd Beschikbaar)
+
+Alle drie boards zijn vanaf de start beschikbaar. Je kan op elk moment switchen tussen boards.
 
 **Easy Board (Blauw)**
-- Altijd beschikbaar vanaf start
 - Simpele challenges
 - 10 punten per tile, 100 voor center
 
 **Medium Board (Oranje)**
-- Unlocked na 3 ringen Easy
 - Middelmatige challenges
 - 25 punten per tile, 200 voor center
 
 **Hard Board (Rood)**
-- Unlocked na 3 ringen Medium
 - Zware challenges
 - 50 punten per tile, 500 voor center
 
 ### Ring Structuur
 
-Elk board heeft **5 ringen** met **3 parallelle paden**:
+Elk board heeft **5 ringen** met **3 tiles per ring**:
 - Ring 1 (buitenste) → Ring 5 (binnenste)
-- Pad 1, 2, 3 kunnen tegelijk bewerkt worden
 - **15 tiles** + **1 center** = 16 tiles per board
 
 ## Progressie Regels
 
-### Per Pad
-- Ring 1 moet voltooid zijn voor ring 2 unlocked
-- Lineaire progressie: 1 → 2 → 3 → 4 → 5
+### Ring-Gebaseerde Progressie
 
-### Tussen Paden
-- Paden zijn ONAFHANKELIJK
-- Pad 2 hoeft niet te wachten op Pad 1
-- Strategische keuze: focus vs spreiding
+**Belangrijkste regel:** Alle 3 tiles in een ring moeten voltooid zijn voordat de volgende ring beschikbaar wordt.
+
+Voorbeeld:
+- Ring 1 heeft 3 tiles (P1, P2, P3)
+- Alle 3 moeten af voordat Ring 2 unlocked
+- Je kan niet aan Ring 2 beginnen als nog 1 tile van Ring 1 open staat
+
+### Onafhankelijke Boards
+
+Boards zijn onafhankelijk van elkaar:
+- Je kan op Easy in Ring 3 zitten terwijl je op Medium nog in Ring 1 zit
+- Voortgang op het ene board beïnvloedt het andere board niet
 
 ### Center Tile
-- Unlocked als alle 3 paden op ring 5 zijn
-- Alle 15 outer tiles moeten compleet zijn
 
-### Board Unlocking
-- Een ring is "voltooid" als alle 3 paden die ring bereikt hebben
-- Medium: 3 ringen Easy = 9 tiles minimum
-- Hard: 3 ringen Medium = 9 tiles minimum
+- Unlocked als alle 15 outer tiles voltooid zijn (Ring 1-5 allemaal compleet)
+- Hoogste punten waarde
 
 ## Evidence Submission
 
@@ -94,7 +94,7 @@ Elk board heeft **5 ringen** met **3 parallelle paden**:
 
 | Indicator | Betekenis |
 |-----------|-----------|
-| Grijze tile (25% opacity) | Nog niet beschikbaar |
+| Grijze tile (25% opacity) | Nog niet beschikbaar (ring niet unlocked) |
 | Gouden rand + glow | Actief, kan gecompleet worden |
 | Gele rand + klok icoon | Pending submission |
 | Vervagde tile (40% opacity) | Voltooid |
@@ -119,21 +119,27 @@ Elk board heeft **5 ringen** met **3 parallelle paden**:
 
 ## Tips & Strategie
 
-### Pad Prioritering
+### Parallel Werken
 
-**Focus Strategy**
-- Voltooi 1 pad helemaal
-- Unlock center zo snel mogelijk
-- Risico: langzaam naar volgende board
+Omdat alle boards tegelijk beschikbaar zijn:
+- Verdeel teamleden over verschillende boards
+- Werk tegelijk aan Easy, Medium en Hard
+- Maximaliseer punten per uur
 
-**Balanced Strategy**
-- Werk aan alle 3 paden gelijk
-- Unlock volgende board sneller
-- Risico: langzamer tot center
+### Tile Prioritering
+
+**Snelle Tiles Eerst**
+- Begin met tiles die je makkelijk kan doen
+- Unlock volgende ringen sneller
+- Meer opties voor je team
+
+**Moeilijke Tiles Uitstellen**
+- Wacht met RNG-heavy tiles tot later
+- Focus eerst op gegarandeerde punten
 
 ### Team Coördinatie
 
-- Verdeel paden onder teamleden
+- Verdeel tiles onder teamleden
 - Combat spelers → combat tiles
 - Skillers → skilling tiles
 - Deel resources en info
@@ -141,13 +147,13 @@ Elk board heeft **5 ringen** met **3 parallelle paden**:
 ## FAQ
 
 **Q: Kunnen we tiles overslaan?**
-A: Nee, lineaire progressie per pad verplicht.
+A: Nee, alle 3 tiles in een ring moeten af voordat de volgende ring beschikbaar wordt.
 
 **Q: Wat als bewijs rejected wordt?**
 A: Upload nieuw bewijs, je houdt toegang tot die tile.
 
-**Q: Kunnen we van board switchen?**
-A: Ja! Tussen unlocked boards kun je heen en weer.
+**Q: Kunnen we meerdere boards tegelijk doen?**
+A: Ja! Alle boards zijn vanaf start beschikbaar. Je kan vrijelijk switchen.
 
 **Q: Hoeveel tijd voor een tile?**
 A: Geen limiet per tile, wel overall event deadline.
@@ -160,6 +166,9 @@ A: Ja, klik op de tile om je uploads te zien.
 
 **Q: Hoe snel worden submissions gereviewed?**
 A: Admin panel refresht elke minuut, review hangt af van beschikbaarheid admins.
+
+**Q: Waarom kan ik een tile niet selecteren?**
+A: Die ring is nog niet unlocked. Voltooi eerst alle tiles in de huidige actieve ring.
 
 ---
 
