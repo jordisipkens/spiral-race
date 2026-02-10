@@ -1,6 +1,6 @@
 # Project Status - Spiraal Race
 
-Last updated: January 2025
+Last updated: February 2025
 
 ## Current State: Production Ready
 
@@ -9,10 +9,11 @@ The application is fully functional and deployed on Vercel.
 ## Completed Features
 
 ### Core Functionality
-- [x] Three spiral boards (Easy, Medium, Hard)
-- [x] 5 rings per board with 3 parallel paths
-- [x] Progressive board unlocking system
-- [x] Center tile unlocking when all paths complete
+- [x] Three spiral boards (Easy, Medium, Hard) - all available from start
+- [x] 5 rings per board with 3 tiles per ring
+- [x] Ring-based progression: complete all 3 tiles in a ring before next ring unlocks
+- [x] Boards are independent (can be on different rings per board)
+- [x] Center tile unlocking when all 15 outer tiles complete
 - [x] Team-specific URLs with unique slugs
 
 ### Evidence Submission System
@@ -37,9 +38,14 @@ The application is fully functional and deployed on Vercel.
 
 ### Visual Indicators
 - [x] Pending submissions show yellow border + clock icon
-- [x] Locked tiles at 25% opacity
+- [x] Locked tiles at 25% opacity (ring not yet available)
 - [x] Active tiles with gold glow border
 - [x] Completed tiles at 40% opacity
+
+### User Experience
+- [x] Rules modal popup with game explanation (English)
+- [x] "Active Tasks" panel showing current ring tasks
+- [x] Progress indicator per path
 
 ## Tech Stack
 
@@ -56,9 +62,9 @@ The application is fully functional and deployed on Vercel.
 ### Pages
 | File | Purpose |
 |------|---------|
-| `app/page.js` | Homepage |
-| `app/team/[slug]/page.js` | Team board view |
-| `app/admin/page.js` | Admin panel |
+| `app/page.js` | Homepage (demo board) |
+| `app/team/[slug]/page.js` | Team board view with submissions |
+| `app/admin/page.js` | Admin panel for tiles, teams, submissions |
 
 ### Components
 | File | Purpose |
@@ -67,6 +73,7 @@ The application is fully functional and deployed on Vercel.
 | `components/TileModal.jsx` | Tile details and evidence upload |
 | `components/BoardTabs.jsx` | Easy/Medium/Hard tab navigation |
 | `components/SubmissionCard.jsx` | Submission display for admin |
+| `components/RulesModal.jsx` | Game rules popup |
 
 ### API Routes
 | Route | Methods | Purpose |
@@ -103,11 +110,17 @@ See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for full details.
 
 ## Key Design Decisions
 
+### Why ring-based progression?
+All 3 tiles in a ring must be completed before the next ring unlocks. This ensures teams work together on all paths rather than focusing on just one.
+
+### Why all boards available from start?
+Teams can work on Easy, Medium, and Hard simultaneously, allowing better task distribution among team members.
+
 ### Why evidence-based completion?
 Instead of teams self-reporting completions, they upload screenshot proof. This ensures fairness and allows admins to verify achievements.
 
 ### Why multiple submissions per tile?
-Some tiles may require multiple proofs (e.g., "Kill boss 3 times"). Teams can submit multiple images, and if one is rejected, they can resubmit.
+Teams can submit multiple images for a tile. If one is rejected, they can resubmit. One approved submission completes the tile.
 
 ### Why auto-refresh instead of real-time?
 Polling is simpler to implement and sufficient for the use case. Team pages refresh every 3 minutes, admin panel every 1 minute.
@@ -123,6 +136,7 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 - [ ] OCR validation for OSRS screenshots
 - [ ] Export results to Excel/CSV
 - [ ] Team authentication (currently teams access via slug URL)
+- [ ] Required submissions count per tile (e.g., need 3 approvals)
 
 ## Known Limitations
 

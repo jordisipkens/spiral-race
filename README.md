@@ -1,6 +1,6 @@
 # Spiraal Race - OSRS Clan Event Platform
 
-A progressive spiral-based event platform for Old School RuneScape clan competitions. Teams complete challenges on spiral boards, submit evidence screenshots, and admins approve completions.
+A spiral-based event platform for Old School RuneScape clan competitions. Teams complete challenges on spiral boards, submit evidence screenshots, and admins approve completions.
 
 ## Live Demo
 
@@ -26,7 +26,7 @@ spiral-race-project/
 │   │   └── page.js                # Admin panel (tiles, teams, submissions)
 │   ├── team/
 │   │   └── [slug]/
-│   │       └── page.js            # Team board page
+│       └── page.js                # Team board page
 │   └── api/
 │       ├── admin/
 │       │   ├── auth/route.js      # Admin authentication
@@ -38,12 +38,14 @@ spiral-race-project/
 │   ├── SpiralBoard.jsx            # Main spiral visualization
 │   ├── TileModal.jsx              # Tile details + evidence upload
 │   ├── BoardTabs.jsx              # Easy/Medium/Hard navigation
-│   └── SubmissionCard.jsx         # Submission display component
+│   ├── SubmissionCard.jsx         # Submission display component
+│   └── RulesModal.jsx             # Game rules popup
 ├── lib/
 │   └── supabase.js                # Supabase client
 └── docs/
     ├── DATABASE_SCHEMA.md         # Database structure
     ├── SPELREGELS.md              # Game rules (Dutch)
+    ├── SETUP.md                   # Setup guide
     └── PROJECT_STATUS.md          # Development progress
 ```
 
@@ -51,11 +53,13 @@ spiral-race-project/
 
 ### Team Features
 - View spiral board with 3 difficulty levels (Easy, Medium, Hard)
-- 5 rings per board with 3 parallel paths
-- Progressive board unlocking (Medium after 3 Easy rings, Hard after 3 Medium rings)
+- All boards available from start
+- 5 rings per board with 3 tiles per ring
+- Ring-based progression: complete all 3 tiles in a ring before next ring unlocks
 - Upload evidence screenshots for tile completions
 - View submission status (pending, approved, rejected)
 - Full-screen image viewer for uploaded evidence
+- Rules popup explaining game mechanics
 - Auto-refresh every 3 minutes for progress updates
 
 ### Admin Features
@@ -67,7 +71,7 @@ spiral-race-project/
 - Auto-refresh every 1 minute for new submissions
 
 ### Visual States
-- **Locked**: Opacity 0.25 - not yet available
+- **Locked**: Opacity 0.25 - ring not yet available
 - **Active**: Gold border with glow - can be completed
 - **Pending**: Yellow border + clock icon - awaiting review
 - **Completed**: Opacity 0.4 - done
@@ -164,18 +168,19 @@ Push to GitHub and connect to Vercel. Add environment variables in Vercel dashbo
 
 ## Game Mechanics
 
-### Board Progression
-- Each board has 5 rings with 3 parallel paths
-- Teams work on all 3 paths simultaneously
-- Each path has linear progression (ring 1 -> 2 -> 3 -> 4 -> 5)
+### Board System
+- All 3 boards (Easy, Medium, Hard) are available from the start
+- Each board has 5 rings with 3 tiles per ring (15 tiles + 1 center = 16 total)
+- Boards are independent - you can be on different rings per board
+
+### Ring-Based Progression
+- All 3 tiles in a ring must be completed before the next ring unlocks
+- Example: Complete Ring 1 Tile 1, Ring 1 Tile 2, and Ring 1 Tile 3 → Ring 2 becomes active
+- You cannot skip ahead - complete every tile in the current ring first
 - Center tile unlocks when all 15 outer tiles are complete
 
-### Unlock Requirements
-- **Medium board**: Complete 3 rings on Easy (minimum 9 tiles)
-- **Hard board**: Complete 3 rings on Medium (minimum 9 tiles)
-
 ### Evidence Submission
-1. Team clicks active tile
+1. Team clicks active tile (gold border)
 2. Uploads screenshot proof
 3. Submission goes to pending queue
 4. Admin reviews and approves/rejects
