@@ -1,6 +1,6 @@
 # Project Status - Spiraal Race
 
-Last updated: February 2025
+Last updated: February 2026
 
 ## Current State: Production Ready
 
@@ -35,6 +35,11 @@ The application is fully functional and deployed on Vercel.
 - [x] Team pages: Auto-refresh every 3 minutes
 - [x] Admin panel: Auto-refresh submissions every 1 minute
 - [x] Silent refresh when TileModal opens
+
+### Discord Integration
+- [x] Webhook notifications when new submissions are created
+- [x] Configurable webhook URL in admin Settings tab
+- [x] Test webhook functionality
 
 ### Visual Indicators
 - [x] Pending submissions show yellow border + clock icon
@@ -79,9 +84,10 @@ The application is fully functional and deployed on Vercel.
 | Route | Methods | Purpose |
 |-------|---------|---------|
 | `/api/submissions/upload` | POST | Upload image to storage |
-| `/api/submissions` | GET, POST | List/create submissions |
+| `/api/submissions` | GET, POST | List/create submissions (sends Discord notification) |
 | `/api/admin/submissions` | GET, PATCH | Review submissions |
 | `/api/admin/auth` | POST | Verify admin password |
+| `/api/admin/settings` | GET, PATCH | Manage app settings (Discord webhook) |
 
 ### Libraries
 | File | Purpose |
@@ -105,6 +111,7 @@ ADMIN_PASSWORD=your-password
 2. **tiles** - Challenge configuration per position
 3. **progress** - Completed tiles per team
 4. **submissions** - Evidence uploads with status
+5. **settings** - App configuration (Discord webhook URL)
 
 See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for full details.
 
@@ -132,7 +139,7 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 
 - [ ] Real-time updates with Supabase subscriptions
 - [ ] Leaderboard page showing all team scores
-- [ ] Discord webhook notifications
+- [x] ~~Discord webhook notifications~~ (Completed February 2026)
 - [ ] OCR validation for OSRS screenshots
 - [ ] Export results to Excel/CSV
 - [ ] Team authentication (currently teams access via slug URL)

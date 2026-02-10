@@ -2,11 +2,12 @@
 
 ## Overview
 
-Supabase PostgreSQL database with 4 main tables:
+Supabase PostgreSQL database with 5 main tables:
 - `teams` - Participating teams with unique URL slugs
 - `tiles` - Configurable challenges per board position
 - `progress` - Completed tiles per team
 - `submissions` - Evidence uploads with approval workflow
+- `settings` - App configuration (Discord webhook, etc.)
 
 ## Tables
 
@@ -129,6 +130,31 @@ CREATE INDEX idx_submissions_team_tile ON submissions(team_id, tile_id);
 2. Admin reviews -> status = 'approved' or 'rejected'
 3. If approved -> creates entry in progress table
 4. If rejected -> team can resubmit
+
+---
+
+### settings
+
+```sql
+CREATE TABLE settings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  key TEXT UNIQUE NOT NULL,
+  value TEXT,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_settings_key ON settings(key);
+```
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| key | TEXT | Setting identifier (e.g., 'discord_webhook_url') |
+| value | TEXT | Setting value (nullable) |
+| updated_at | TIMESTAMP | Last update timestamp |
+
+**Current settings**:
+- `discord_webhook_url` - Discord webhook URL for notifications
 
 ---
 

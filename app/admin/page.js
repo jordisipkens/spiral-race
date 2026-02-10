@@ -31,6 +31,11 @@ export default function AdminPage() {
   const [submissions, setSubmissions] = useState([])
   const [loadingSubmissions, setLoadingSubmissions] = useState(false)
 
+  // Settings state
+  const [webhookUrl, setWebhookUrl] = useState('')
+  const [savingSettings, setSavingSettings] = useState(false)
+  const [testingWebhook, setTestingWebhook] = useState(false)
+
   // Check auth on mount
   useEffect(() => {
     checkAuth()
@@ -109,8 +114,64 @@ export default function AdminPage() {
 
   async function loadData() {
     setLoading(true)
-    await Promise.all([loadTiles(), loadTeams(), loadSubmissions()])
+    await Promise.all([loadTiles(), loadTeams(), loadSubmissions(), loadSettings()])
     setLoading(false)
+  }
+
+  async function loadSettings() {
+    try {
+      const res = await fetch('/api/admin/settings')
+      if (res.ok) {
+        const data = await res.json()
+        setWebhookUrl(data.settings?.discord_webhook_url || '')
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error)
+    }
+  }
+
+  async function saveWebhookUrl() {
+    setSavingSettings(true)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'discord_webhook_url', value: webhookUrl.trim() || null })
+      })
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Discord webhook saved!' })
+      } else {
+        setMessage({ type: 'error', text: 'Failed to save webhook' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to save webhook' })
+    }
+    setSavingSettings(false)
+  }
+
+  async function testWebhook() {
+    if (!webhookUrl.trim()) {
+      setMessage({ type: 'error', text: 'Please enter a webhook URL first' })
+      return
+    }
+    setTestingWebhook(true)
+    try {
+      const res = await fetch(webhookUrl.trim(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: '**Test notification from Spiraal Race!** If you see this, the webhook is working correctly.'
+        })
+      })
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Test message sent to Discord!' })
+      } else {
+        setMessage({ type: 'error', text: 'Failed to send test message. Check your webhook URL.' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to send test message. Check your webhook URL.' })
+    }
+    setTestingWebhook(false)
   }
 
   async function loadSubmissions() {
@@ -487,6 +548,16 @@ export default function AdminPage() {
             <span style={styles.badge}>{submissions.length}</span>
           )}
         </button>
+        <button
+          onClick={() => setActiveSection('settings')}
+          style={{
+            ...styles.sectionTab,
+            background: activeSection === 'settings' ? '#27ae60' : '#2c3e50',
+            borderColor: activeSection === 'settings' ? '#ffd700' : 'transparent'
+          }}
+        >
+          ⚙️ Settings
+        </button>
       </div>
 
       {/* TILES SECTION */}
@@ -752,6 +823,59 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </>
+      )}
+
+      {/* SETTINGS SECTION */}
+      {activeSection === 'settings' && (
+        <>
+          <div style={styles.addTeamForm}>
+            <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Discord Notifications</h3>
+            <p style={{ color: '#aaa', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              When configured, a Discord message will be sent whenever a team submits evidence for review.
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <input
+                type="url"
+                value={webhookUrl}
+                onChange={e => setWebhookUrl(e.target.value)}
+                placeholder="https://discord.com/api/webhooks/..."
+                style={{ ...styles.input, flex: 1, minWidth: '300px' }}
+              />
+              <button
+                onClick={saveWebhookUrl}
+                disabled={savingSettings}
+                style={{ ...styles.saveBtn, opacity: savingSettings ? 0.5 : 1 }}
+              >
+                {savingSettings ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={testWebhook}
+                disabled={testingWebhook || !webhookUrl.trim()}
+                style={{
+                  ...styles.editBtn,
+                  background: '#9b59b6',
+                  opacity: (testingWebhook || !webhookUrl.trim()) ? 0.5 : 1
+                }}
+              >
+                {testingWebhook ? 'Sending...' : 'Test'}
+              </button>
+            </div>
+
+            <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+              To get a webhook URL: Discord Server Settings → Integrations → Webhooks → New Webhook
+            </p>
+
+            {webhookUrl && (
+              <button
+                onClick={() => { setWebhookUrl(''); saveWebhookUrl(); }}
+                style={{ ...styles.deleteBtn, marginTop: '1rem' }}
+              >
+                Disable Notifications
+              </button>
+            )}
+          </div>
         </>
       )}
     </main>
