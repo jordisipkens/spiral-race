@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 import SpiralBoard from '../../../components/SpiralBoard'
 import BoardTabs from '../../../components/BoardTabs'
+import RulesModal from '../../../components/RulesModal'
 
 export default function TeamPage() {
   const params = useParams()
@@ -21,6 +22,7 @@ export default function TeamPage() {
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [submissions, setSubmissions] = useState([])
+  const [showRules, setShowRules] = useState(false)
 
   // Load team and data
   useEffect(() => {
@@ -290,6 +292,9 @@ export default function TeamPage() {
       maxWidth: '900px',
       margin: '0 auto'
     }}>
+      {/* Rules Modal */}
+      <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
+
       {/* Header */}
       <header style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <h1 style={{
@@ -306,15 +311,41 @@ export default function TeamPage() {
           Spiral Race
         </p>
         <div style={{
-          display: 'inline-block',
-          padding: '0.5rem 1.5rem',
-          background: 'rgba(255, 215, 0, 0.1)',
-          borderRadius: '20px',
-          border: '1px solid rgba(255, 215, 0, 0.3)'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '1rem',
+          flexWrap: 'wrap'
         }}>
-          <span style={{ color: '#ffd700', fontWeight: 'bold', fontSize: '1.25rem' }}>
-            {totalPoints} points
-          </span>
+          <div style={{
+            padding: '0.5rem 1.5rem',
+            background: 'rgba(255, 215, 0, 0.1)',
+            borderRadius: '20px',
+            border: '1px solid rgba(255, 215, 0, 0.3)'
+          }}>
+            <span style={{ color: '#ffd700', fontWeight: 'bold', fontSize: '1.25rem' }}>
+              {totalPoints} points
+            </span>
+          </div>
+          <button
+            onClick={() => setShowRules(true)}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'rgba(52, 152, 219, 0.2)',
+              border: '1px solid rgba(52, 152, 219, 0.5)',
+              borderRadius: '20px',
+              color: '#3498db',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <span>?</span>
+            <span>Rules</span>
+          </button>
         </div>
         {saving && (
           <p style={{ color: '#3498db', fontSize: '0.9rem', marginTop: '0.5rem' }}>
