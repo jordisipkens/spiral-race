@@ -142,9 +142,16 @@ export default function SubmissionCard({ submission, onApprove, onReject, saving
         </div>
       )}
 
-      {submission.status === 'rejected' && submission.rejection_reason && (
-        <div style={styles.rejectionReason}>
-          <strong>Rejection reason:</strong> {submission.rejection_reason}
+      {submission.status === 'rejected' && (
+        <div style={styles.rejectedInfo}>
+          {submission.reviewed_at && (
+            <div>Rejected on {new Date(submission.reviewed_at).toLocaleString()}</div>
+          )}
+          {submission.rejection_reason && (
+            <div style={{ marginTop: '0.25rem' }}>
+              <strong>Reason:</strong> {submission.rejection_reason}
+            </div>
+          )}
         </div>
       )}
 
@@ -263,19 +270,19 @@ const styles = {
     fontWeight: 'bold',
     cursor: 'pointer'
   },
-  rejectionReason: {
-    background: 'rgba(231, 76, 60, 0.1)',
-    border: '1px solid rgba(231, 76, 60, 0.3)',
-    borderRadius: '6px',
-    padding: '0.75rem',
-    color: '#e74c3c',
-    fontSize: '0.9rem',
-    marginTop: '0.75rem'
-  },
   approvedInfo: {
     color: '#2ecc71',
     fontSize: '0.85rem',
     marginTop: '0.5rem'
+  },
+  rejectedInfo: {
+    color: '#e74c3c',
+    fontSize: '0.85rem',
+    marginTop: '0.5rem',
+    padding: '0.5rem',
+    background: 'rgba(231, 76, 60, 0.1)',
+    borderRadius: '4px',
+    border: '1px solid rgba(231, 76, 60, 0.2)'
   },
   modalOverlay: {
     position: 'fixed',

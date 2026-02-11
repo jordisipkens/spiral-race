@@ -32,6 +32,7 @@ The application is fully functional and deployed on Vercel.
 - [x] Full-screen image viewer for review
 - [x] Multi-item tiles: configure tiles requiring multiple submissions
 - [x] View related approved submissions when reviewing multi-item tiles
+- [x] Reviewed submissions tab: view approved/rejected submission history
 
 ### Auto-refresh Features
 - [x] Team pages: Auto-refresh every 3 minutes

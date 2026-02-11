@@ -31,6 +31,9 @@ export default function AdminPage() {
   const [submissions, setSubmissions] = useState([])
   const [loadingSubmissions, setLoadingSubmissions] = useState(false)
   const [relatedSubmissions, setRelatedSubmissions] = useState({}) // { tileId_teamId: [submissions] }
+  const [submissionsTab, setSubmissionsTab] = useState('pending') // 'pending' or 'reviewed'
+  const [reviewedSubmissions, setReviewedSubmissions] = useState([])
+  const [loadingReviewed, setLoadingReviewed] = useState(false)
 
   // Settings state
   const [webhookUrl, setWebhookUrl] = useState('')
@@ -219,6 +222,21 @@ export default function AdminPage() {
     }
 
     setRelatedSubmissions(related)
+  }
+
+  // Load reviewed (approved/rejected) submissions
+  async function loadReviewedSubmissions() {
+    setLoadingReviewed(true)
+    try {
+      const res = await fetch('/api/admin/submissions?status=reviewed')
+      if (res.ok) {
+        const data = await res.json()
+        setReviewedSubmissions(data.submissions || [])
+      }
+    } catch (error) {
+      console.error('Error loading reviewed submissions:', error)
+    }
+    setLoadingReviewed(false)
   }
 
   async function handleSubmissionAction(submissionId, action, rejectionReason = null) {
@@ -894,45 +912,120 @@ export default function AdminPage() {
       {/* SUBMISSIONS SECTION */}
       {activeSection === 'submissions' && (
         <>
-          <div style={styles.submissionsHeader}>
-            <h3 style={{ color: '#fff', margin: 0 }}>
-              Pending Submissions ({submissions.length})
-            </h3>
+          {/* Sub-tabs for Pending / Reviewed */}
+          <div style={styles.submissionsTabs}>
             <button
-              onClick={loadSubmissions}
-              disabled={loadingSubmissions}
-              style={styles.refreshBtn}
+              onClick={() => setSubmissionsTab('pending')}
+              style={{
+                ...styles.submissionsTabBtn,
+                ...(submissionsTab === 'pending' ? styles.submissionsTabBtnActive : {})
+              }}
             >
-              {loadingSubmissions ? 'Loading...' : 'Refresh'}
+              Pending ({submissions.length})
+            </button>
+            <button
+              onClick={() => {
+                setSubmissionsTab('reviewed')
+                if (reviewedSubmissions.length === 0) {
+                  loadReviewedSubmissions()
+                }
+              }}
+              style={{
+                ...styles.submissionsTabBtn,
+                ...(submissionsTab === 'reviewed' ? styles.submissionsTabBtnActive : {})
+              }}
+            >
+              Reviewed ({reviewedSubmissions.length})
             </button>
           </div>
 
-          {loadingSubmissions ? (
-            <p style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>
-              Loading submissions...
-            </p>
-          ) : submissions.length === 0 ? (
-            <div style={styles.emptyState}>
-              <p style={{ color: '#888', fontSize: '1.1rem' }}>
-                No pending submissions
-              </p>
-              <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                Teams will submit evidence here for review
-              </p>
-            </div>
-          ) : (
-            <div style={styles.submissionsList}>
-              {submissions.map(submission => (
-                <SubmissionCard
-                  key={submission.id}
-                  submission={submission}
-                  onApprove={() => handleSubmissionAction(submission.id, 'approve')}
-                  onReject={(reason) => handleSubmissionAction(submission.id, 'reject', reason)}
-                  saving={saving}
-                  relatedApprovedSubmissions={relatedSubmissions[`${submission.team_id}_${submission.tile_id}`] || []}
-                />
-              ))}
-            </div>
+          {/* PENDING TAB */}
+          {submissionsTab === 'pending' && (
+            <>
+              <div style={styles.submissionsHeader}>
+                <h3 style={{ color: '#fff', margin: 0 }}>
+                  Pending Submissions
+                </h3>
+                <button
+                  onClick={loadSubmissions}
+                  disabled={loadingSubmissions}
+                  style={styles.refreshBtn}
+                >
+                  {loadingSubmissions ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
+
+              {loadingSubmissions ? (
+                <p style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>
+                  Loading submissions...
+                </p>
+              ) : submissions.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <p style={{ color: '#888', fontSize: '1.1rem' }}>
+                    No pending submissions
+                  </p>
+                  <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                    Teams will submit evidence here for review
+                  </p>
+                </div>
+              ) : (
+                <div style={styles.submissionsList}>
+                  {submissions.map(submission => (
+                    <SubmissionCard
+                      key={submission.id}
+                      submission={submission}
+                      onApprove={() => handleSubmissionAction(submission.id, 'approve')}
+                      onReject={(reason) => handleSubmissionAction(submission.id, 'reject', reason)}
+                      saving={saving}
+                      relatedApprovedSubmissions={relatedSubmissions[`${submission.team_id}_${submission.tile_id}`] || []}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* REVIEWED TAB */}
+          {submissionsTab === 'reviewed' && (
+            <>
+              <div style={styles.submissionsHeader}>
+                <h3 style={{ color: '#fff', margin: 0 }}>
+                  Reviewed Submissions
+                </h3>
+                <button
+                  onClick={loadReviewedSubmissions}
+                  disabled={loadingReviewed}
+                  style={styles.refreshBtn}
+                >
+                  {loadingReviewed ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
+
+              {loadingReviewed ? (
+                <p style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>
+                  Loading reviewed submissions...
+                </p>
+              ) : reviewedSubmissions.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <p style={{ color: '#888', fontSize: '1.1rem' }}>
+                    No reviewed submissions yet
+                  </p>
+                  <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                    Approved and rejected submissions will appear here
+                  </p>
+                </div>
+              ) : (
+                <div style={styles.submissionsList}>
+                  {reviewedSubmissions.map(submission => (
+                    <SubmissionCard
+                      key={submission.id}
+                      submission={submission}
+                      readonly={true}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </>
       )}
@@ -1222,6 +1315,31 @@ const styles = {
     justifyContent: 'center',
     fontSize: '0.75rem',
     fontWeight: 'bold'
+  },
+  submissionsTabs: {
+    display: 'flex',
+    gap: '0.5rem',
+    marginBottom: '1.5rem',
+    borderBottom: '1px solid rgba(255,255,255,0.1)',
+    paddingBottom: '1rem'
+  },
+  submissionsTabBtn: {
+    padding: '0.75rem 1.5rem',
+    background: 'transparent',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: '8px',
+    color: '#888',
+    fontSize: '0.95rem',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  },
+  submissionsTabBtnActive: {
+    background: 'rgba(52, 152, 219, 0.2)',
+    borderColor: '#3498db',
+    color: '#3498db'
   },
   submissionsHeader: {
     display: 'flex',

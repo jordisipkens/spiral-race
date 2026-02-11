@@ -22,15 +22,24 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || 'pending'
 
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('submissions')
       .select(`
         *,
         teams(id, name, slug),
         tiles(id, title, board, ring, path, points, is_center, is_multi_item, required_submissions)
       `)
-      .eq('status', status)
-      .order('submitted_at', { ascending: true })
+
+    // Handle 'reviewed' as a special case (approved OR rejected)
+    if (status === 'reviewed') {
+      query = query.in('status', ['approved', 'rejected'])
+        .order('reviewed_at', { ascending: false })
+    } else {
+      query = query.eq('status', status)
+        .order('submitted_at', { ascending: true })
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching submissions:', error)
