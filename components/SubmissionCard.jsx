@@ -2,13 +2,17 @@
 
 import { useState } from 'react'
 
-export default function SubmissionCard({ submission, onApprove, onReject, saving, readonly }) {
+export default function SubmissionCard({ submission, onApprove, onReject, saving, readonly, relatedApprovedSubmissions = [] }) {
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
   const [showFullImage, setShowFullImage] = useState(false)
+  const [viewingRelatedImage, setViewingRelatedImage] = useState(null)
 
   const team = submission.teams
   const tile = submission.tiles
+  const isMultiItem = tile?.is_multi_item || false
+  const requiredSubmissions = tile?.required_submissions || 1
+  const currentApproved = relatedApprovedSubmissions.length
 
   const handleReject = () => {
     onReject(rejectionReason)
@@ -66,6 +70,52 @@ export default function SubmissionCard({ submission, onApprove, onReject, saving
         <span>Submitted: {new Date(submission.submitted_at).toLocaleString()}</span>
         <span>{tile?.points || '—'} points</span>
       </div>
+
+      {/* Multi-item tile info */}
+      {isMultiItem && (
+        <div style={styles.multiItemInfo}>
+          <div style={styles.multiItemHeader}>
+            <span style={styles.multiItemBadge}>Multi-Item Tile</span>
+            <span style={styles.progressCount}>
+              {currentApproved}/{requiredSubmissions} approved
+            </span>
+          </div>
+
+          {currentApproved > 0 && (
+            <div style={styles.relatedSubmissions}>
+              <p style={styles.relatedTitle}>Previously approved submissions:</p>
+              <div style={styles.relatedGrid}>
+                {relatedApprovedSubmissions.map(sub => (
+                  <img
+                    key={sub.id}
+                    src={sub.image_url}
+                    alt={`Approved ${new Date(sub.reviewed_at).toLocaleDateString()}`}
+                    style={styles.relatedThumb}
+                    onClick={() => setViewingRelatedImage(sub.image_url)}
+                    title={`Approved on ${new Date(sub.reviewed_at).toLocaleString()}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Related image viewer */}
+      {viewingRelatedImage && (
+        <div style={styles.imageViewerOverlay} onClick={() => setViewingRelatedImage(null)}>
+          <button style={styles.imageViewerClose} onClick={() => setViewingRelatedImage(null)}>
+            ×
+          </button>
+          <img
+            src={viewingRelatedImage}
+            alt="Related submission"
+            style={styles.imageViewerImg}
+            onClick={e => e.stopPropagation()}
+          />
+          <p style={styles.imageViewerHint}>Click outside or × to close</p>
+        </div>
+      )}
 
       {!readonly && submission.status === 'pending' && (
         <div style={styles.actions}>
@@ -333,5 +383,52 @@ const styles = {
     color: '#888',
     marginTop: '1rem',
     fontSize: '0.9rem'
+  },
+  multiItemInfo: {
+    background: 'rgba(155, 89, 182, 0.1)',
+    border: '1px solid rgba(155, 89, 182, 0.3)',
+    borderRadius: '8px',
+    padding: '1rem',
+    marginBottom: '1rem'
+  },
+  multiItemHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.75rem'
+  },
+  multiItemBadge: {
+    background: '#9b59b6',
+    color: 'white',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    fontWeight: 'bold'
+  },
+  progressCount: {
+    color: '#9b59b6',
+    fontWeight: 'bold'
+  },
+  relatedSubmissions: {
+    marginTop: '0.5rem'
+  },
+  relatedTitle: {
+    color: '#aaa',
+    fontSize: '0.85rem',
+    marginBottom: '0.5rem',
+    margin: '0 0 0.5rem 0'
+  },
+  relatedGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem'
+  },
+  relatedThumb: {
+    width: '60px',
+    height: '60px',
+    objectFit: 'cover',
+    borderRadius: '4px',
+    border: '2px solid #2ecc71',
+    cursor: 'pointer'
   }
 }

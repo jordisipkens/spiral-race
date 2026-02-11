@@ -30,6 +30,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [loadingSubmissions, setLoadingSubmissions] = useState(false)
+  const [relatedSubmissions, setRelatedSubmissions] = useState({}) // { tileId_teamId: [submissions] }
 
   // Settings state
   const [webhookUrl, setWebhookUrl] = useState('')
@@ -180,12 +181,44 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/submissions')
       if (res.ok) {
         const data = await res.json()
-        setSubmissions(data.submissions || [])
+        const pendingSubmissions = data.submissions || []
+        setSubmissions(pendingSubmissions)
+
+        // For multi-item tiles, load related approved submissions
+        const multiItemSubmissions = pendingSubmissions.filter(s => s.tiles?.is_multi_item)
+        if (multiItemSubmissions.length > 0) {
+          await loadRelatedSubmissions(multiItemSubmissions)
+        }
       }
     } catch (error) {
       console.error('Error loading submissions:', error)
     }
     setLoadingSubmissions(false)
+  }
+
+  // Load related approved submissions for multi-item tiles
+  async function loadRelatedSubmissions(multiItemSubmissions) {
+    const related = {}
+
+    // Get unique team+tile combinations
+    const combinations = [...new Set(multiItemSubmissions.map(s => `${s.team_id}_${s.tile_id}`))]
+
+    for (const combo of combinations) {
+      const [teamId, tileId] = combo.split('_')
+      const { data } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('team_id', teamId)
+        .eq('tile_id', tileId)
+        .eq('status', 'approved')
+        .order('reviewed_at', { ascending: true })
+
+      if (data && data.length > 0) {
+        related[combo] = data
+      }
+    }
+
+    setRelatedSubmissions(related)
   }
 
   async function handleSubmissionAction(submissionId, action, rejectionReason = null) {
@@ -392,7 +425,9 @@ export default function AdminPage() {
       .update({
         title: tile.title,
         description: tile.description,
-        points: tile.points
+        points: tile.points,
+        is_multi_item: tile.is_multi_item || false,
+        required_submissions: tile.is_multi_item ? (tile.required_submissions || 1) : 1
       })
       .eq('id', tile.id)
 
@@ -400,11 +435,50 @@ export default function AdminPage() {
       console.error('Error updating tile:', error)
       setMessage({ type: 'error', text: 'Error saving' })
     } else {
+      // If required_submissions was lowered, check if any teams should now have progress
+      if (tile.is_multi_item && tile.required_submissions) {
+        await checkAndUpdateProgressForTile(tile.id, tile.required_submissions)
+      }
       setMessage({ type: 'success', text: 'Tile saved!' })
       setEditingTile(null)
       loadTiles()
     }
     setSaving(false)
+  }
+
+  // Check if teams have enough approved submissions to complete a tile
+  async function checkAndUpdateProgressForTile(tileId, requiredSubmissions) {
+    try {
+      // Get all approved submissions for this tile, grouped by team
+      const { data: submissions } = await supabase
+        .from('submissions')
+        .select('team_id')
+        .eq('tile_id', tileId)
+        .eq('status', 'approved')
+
+      if (!submissions || submissions.length === 0) return
+
+      // Count by team
+      const teamCounts = {}
+      submissions.forEach(s => {
+        teamCounts[s.team_id] = (teamCounts[s.team_id] || 0) + 1
+      })
+
+      // For teams that meet the requirement, create progress records
+      for (const [teamId, count] of Object.entries(teamCounts)) {
+        if (count >= requiredSubmissions) {
+          await supabase.from('progress').upsert({
+            team_id: teamId,
+            tile_id: tileId,
+            completed_at: new Date().toISOString()
+          }, {
+            onConflict: 'team_id,tile_id'
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error checking progress for tile:', error)
+    }
   }
 
   // Delete tile
@@ -629,6 +703,37 @@ export default function AdminPage() {
                         placeholder="Points"
                         style={{ ...styles.input, width: '100px' }}
                       />
+                      <div style={styles.multiItemSection}>
+                        <label style={styles.checkboxLabel}>
+                          <input
+                            type="checkbox"
+                            checked={editingTile.is_multi_item || false}
+                            onChange={e => setEditingTile({
+                              ...editingTile,
+                              is_multi_item: e.target.checked,
+                              required_submissions: e.target.checked ? (editingTile.required_submissions || 2) : 1
+                            })}
+                            style={styles.checkbox}
+                          />
+                          Multi-Item Tile (requires multiple submissions)
+                        </label>
+                        {editingTile.is_multi_item && (
+                          <div style={styles.requiredSubmissionsRow}>
+                            <label style={{ color: '#aaa', fontSize: '0.9rem' }}>Required submissions:</label>
+                            <input
+                              type="number"
+                              min="2"
+                              max="20"
+                              value={editingTile.required_submissions || 2}
+                              onChange={e => setEditingTile({
+                                ...editingTile,
+                                required_submissions: Math.max(2, parseInt(e.target.value) || 2)
+                              })}
+                              style={{ ...styles.input, width: '80px' }}
+                            />
+                          </div>
+                        )}
+                      </div>
                       <div style={styles.editActions}>
                         <button onClick={() => updateTile(editingTile)} disabled={saving} style={styles.saveBtn}>
                           Save
@@ -647,6 +752,11 @@ export default function AdminPage() {
                         <div style={styles.tileTitle}>{tile.title}</div>
                         {tile.description && <div style={styles.tileDesc}>{tile.description}</div>}
                         <div style={styles.tilePoints}>{tile.points} points</div>
+                        {tile.is_multi_item && (
+                          <div style={styles.multiItemBadge}>
+                            Multi-Item: {tile.required_submissions} submissions required
+                          </div>
+                        )}
                       </div>
                       <div style={styles.tileActions}>
                         <button onClick={() => setEditingTile({ ...tile })} style={styles.editBtn}>Edit</button>
@@ -819,6 +929,7 @@ export default function AdminPage() {
                   onApprove={() => handleSubmissionAction(submission.id, 'approve')}
                   onReject={(reason) => handleSubmissionAction(submission.id, 'reject', reason)}
                   saving={saving}
+                  relatedApprovedSubmissions={relatedSubmissions[`${submission.team_id}_${submission.tile_id}`] || []}
                 />
               ))}
             </div>
@@ -1138,5 +1249,40 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem'
+  },
+  multiItemSection: {
+    background: 'rgba(155, 89, 182, 0.1)',
+    border: '1px solid rgba(155, 89, 182, 0.3)',
+    borderRadius: '6px',
+    padding: '0.75rem'
+  },
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '0.9rem'
+  },
+  checkbox: {
+    width: '18px',
+    height: '18px',
+    cursor: 'pointer'
+  },
+  requiredSubmissionsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    marginTop: '0.75rem'
+  },
+  multiItemBadge: {
+    display: 'inline-block',
+    background: 'rgba(155, 89, 182, 0.2)',
+    border: '1px solid #9b59b6',
+    color: '#9b59b6',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    marginTop: '0.5rem'
   }
 }

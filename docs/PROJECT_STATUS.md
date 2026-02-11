@@ -30,6 +30,8 @@ The application is fully functional and deployed on Vercel.
 - [x] Submission review queue
 - [x] Approve/reject with optional reason
 - [x] Full-screen image viewer for review
+- [x] Multi-item tiles: configure tiles requiring multiple submissions
+- [x] View related approved submissions when reviewing multi-item tiles
 
 ### Auto-refresh Features
 - [x] Team pages: Auto-refresh every 3 minutes
@@ -143,7 +145,7 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 - [ ] OCR validation for OSRS screenshots
 - [ ] Export results to Excel/CSV
 - [ ] Team authentication (currently teams access via slug URL)
-- [ ] Required submissions count per tile (e.g., need 3 approvals)
+- [x] ~~Required submissions count per tile~~ (Completed February 2026)
 
 ## Known Limitations
 

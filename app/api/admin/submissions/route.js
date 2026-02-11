@@ -27,7 +27,7 @@ export async function GET(request) {
       .select(`
         *,
         teams(id, name, slug),
-        tiles(id, title, board, ring, path, points, is_center)
+        tiles(id, title, board, ring, path, points, is_center, is_multi_item, required_submissions)
       `)
       .eq('status', status)
       .order('submitted_at', { ascending: true })
@@ -86,31 +86,62 @@ export async function PATCH(request) {
       return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
-    // If approved, add to progress table
+    // If approved, check if we should add to progress table
     if (action === 'approve') {
-      const { error: progressError } = await supabaseAdmin
-        .from('progress')
-        .upsert({
-          team_id: submission.team_id,
-          tile_id: submission.tile_id,
-          completed_at: new Date().toISOString()
-        }, {
-          onConflict: 'team_id,tile_id'
-        })
+      const tile = submission.tiles
+      const isMultiItem = tile?.is_multi_item || false
+      const requiredSubmissions = tile?.required_submissions || 1
 
-      if (progressError) {
-        console.error('Error updating progress:', progressError)
-        // Rollback submission status
-        await supabaseAdmin
-          .from('submissions')
-          .update({ status: 'pending', reviewed_at: null, reviewed_by: null })
-          .eq('id', id)
+      // Count approved submissions for this team+tile (including the one we just approved)
+      const { count, error: countError } = await supabaseAdmin
+        .from('submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('team_id', submission.team_id)
+        .eq('tile_id', submission.tile_id)
+        .eq('status', 'approved')
 
-        return NextResponse.json(
-          { error: 'Failed to update progress. Submission rolled back.' },
-          { status: 500 }
-        )
+      if (countError) {
+        console.error('Error counting submissions:', countError)
       }
+
+      const approvedCount = count || 0
+      const requiredCount = isMultiItem ? requiredSubmissions : 1
+      const progressCreated = approvedCount >= requiredCount
+
+      // Only create progress if we've reached the required number
+      if (progressCreated) {
+        const { error: progressError } = await supabaseAdmin
+          .from('progress')
+          .upsert({
+            team_id: submission.team_id,
+            tile_id: submission.tile_id,
+            completed_at: new Date().toISOString()
+          }, {
+            onConflict: 'team_id,tile_id'
+          })
+
+        if (progressError) {
+          console.error('Error updating progress:', progressError)
+          // Rollback submission status
+          await supabaseAdmin
+            .from('submissions')
+            .update({ status: 'pending', reviewed_at: null, reviewed_by: null })
+            .eq('id', id)
+
+          return NextResponse.json(
+            { error: 'Failed to update progress. Submission rolled back.' },
+            { status: 500 }
+          )
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        submission,
+        approvedCount,
+        requiredCount,
+        progressCreated
+      })
     }
 
     return NextResponse.json({ success: true, submission })

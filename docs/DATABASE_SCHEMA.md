@@ -47,7 +47,10 @@ CREATE TABLE tiles (
   description TEXT,
   points INTEGER DEFAULT 10,
   is_center BOOLEAN DEFAULT FALSE,
-  UNIQUE(board, ring, path, is_center)
+  is_multi_item BOOLEAN DEFAULT FALSE,
+  required_submissions INTEGER DEFAULT 1,
+  UNIQUE(board, ring, path, is_center),
+  CONSTRAINT check_required_submissions CHECK (required_submissions >= 1)
 );
 
 CREATE INDEX idx_tiles_board ON tiles(board);
@@ -64,6 +67,8 @@ CREATE INDEX idx_tiles_position ON tiles(board, ring, path);
 | description | TEXT | Challenge description |
 | points | INTEGER | Points awarded on completion |
 | is_center | BOOLEAN | True for center tile (unlocks when all paths complete) |
+| is_multi_item | BOOLEAN | True if tile requires multiple submissions |
+| required_submissions | INTEGER | Number of approved submissions needed (default 1) |
 
 **Tile Count**: 16 per board (5 rings × 3 paths + 1 center) = 48 total
 

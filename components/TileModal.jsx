@@ -47,8 +47,14 @@ export default function TileModal({
   // Filter submissions for this tile
   const tileSubmissions = submissions.filter(s => s.tile_id === tile.id)
   const pendingSubmissions = tileSubmissions.filter(s => s.status === 'pending')
+  const approvedSubmissions = tileSubmissions.filter(s => s.status === 'approved')
   const rejectedSubmissions = tileSubmissions.filter(s => s.status === 'rejected')
   const hasPendingSubmissions = pendingSubmissions.length > 0
+
+  // Multi-item tile info
+  const isMultiItem = tile.is_multi_item || false
+  const requiredSubmissions = tile.required_submissions || 1
+  const approvedCount = approvedSubmissions.length
 
   const canSubmit = !isCompleted && !isLocked && !disabled && teamId
 
@@ -187,6 +193,31 @@ export default function TileModal({
           <span style={styles.pointsLabel}>Points</span>
           <span style={styles.pointsValue}>{tile.points}</span>
         </div>
+
+        {/* Multi-item Progress */}
+        {isMultiItem && (
+          <div style={styles.multiItemProgress}>
+            <div style={styles.multiItemHeader}>
+              <span style={styles.multiItemBadge}>Multi-Item Tile</span>
+              <span style={styles.multiItemCount}>
+                {approvedCount}/{requiredSubmissions} approved
+              </span>
+            </div>
+            <div style={styles.progressBarContainer}>
+              <div
+                style={{
+                  ...styles.progressBarFill,
+                  width: `${Math.min(100, (approvedCount / requiredSubmissions) * 100)}%`
+                }}
+              />
+            </div>
+            <p style={styles.multiItemHint}>
+              {approvedCount >= requiredSubmissions
+                ? 'All required submissions approved!'
+                : `Submit ${requiredSubmissions - approvedCount} more screenshot${requiredSubmissions - approvedCount > 1 ? 's' : ''} to complete this tile`}
+            </p>
+          </div>
+        )}
 
         {/* Existing Submissions */}
         {tileSubmissions.length > 0 && (
@@ -653,5 +684,50 @@ const styles = {
     color: '#666',
     fontSize: '0.85rem',
     marginTop: '1rem'
+  },
+  multiItemProgress: {
+    background: 'rgba(155, 89, 182, 0.1)',
+    border: '1px solid rgba(155, 89, 182, 0.3)',
+    borderRadius: '8px',
+    padding: '1rem',
+    marginBottom: '1.5rem'
+  },
+  multiItemHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.75rem'
+  },
+  multiItemBadge: {
+    background: '#9b59b6',
+    color: 'white',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    fontWeight: 'bold'
+  },
+  multiItemCount: {
+    color: '#9b59b6',
+    fontWeight: 'bold',
+    fontSize: '0.9rem'
+  },
+  progressBarContainer: {
+    height: '8px',
+    background: 'rgba(155, 89, 182, 0.2)',
+    borderRadius: '4px',
+    overflow: 'hidden',
+    marginBottom: '0.75rem'
+  },
+  progressBarFill: {
+    height: '100%',
+    background: 'linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%)',
+    borderRadius: '4px',
+    transition: 'width 0.3s ease'
+  },
+  multiItemHint: {
+    color: '#aaa',
+    fontSize: '0.85rem',
+    margin: 0,
+    textAlign: 'center'
   }
 }

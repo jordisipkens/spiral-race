@@ -65,8 +65,10 @@ spiral-race-project/
 ### Admin Features
 - Password-protected admin panel
 - Manage tiles (title, description, points per position)
+- Multi-item tiles: configure tiles requiring multiple submissions to complete
 - Create and manage teams with unique slugs
 - Review pending submissions with full-screen image viewer
+- View related approved submissions for multi-item tiles
 - Approve/reject submissions with optional rejection reason
 - Auto-refresh every 1 minute for new submissions
 
@@ -117,7 +119,10 @@ CREATE TABLE tiles (
   description TEXT,
   points INTEGER DEFAULT 10,
   is_center BOOLEAN DEFAULT FALSE,
-  UNIQUE(board, ring, path, is_center)
+  is_multi_item BOOLEAN DEFAULT FALSE,
+  required_submissions INTEGER DEFAULT 1,
+  UNIQUE(board, ring, path, is_center),
+  CONSTRAINT check_required_submissions CHECK (required_submissions >= 1)
 );
 
 -- Progress table

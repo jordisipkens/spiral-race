@@ -78,7 +78,7 @@ function getLabelPosition(innerRadius, outerRadius, startAngle, endAngle) {
   }
 }
 
-function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled, hasPendingSubmission }) {
+function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled, hasPendingSubmission, approvedCount = 0 }) {
   const ringOuter = OUTER_RADIUS - ((ring - 1) * RING_THICKNESS)
   const ringInner = ringOuter - RING_THICKNESS
   const rotationOffset = (ring - 1) * 18
@@ -138,15 +138,61 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
       >
         {tile?.title || `R${ring}P${path + 1}`}
       </text>
-      {hasPendingSubmission && (
-        <text
-          x={labelPos.x + 18}
-          y={labelPos.y - 12}
-          fontSize="10"
-          style={{ pointerEvents: 'none' }}
-        >
-          ⏳
-        </text>
+      {/* Status badge for tiles */}
+      {state !== 'completed' && tile && (
+        <g>
+          {tile.is_multi_item ? (
+            /* Multi-item badge: show X/Y */
+            <>
+              <rect
+                x={labelPos.x - 18}
+                y={labelPos.y + 8}
+                width="36"
+                height="14"
+                rx="7"
+                fill="rgba(155, 89, 182, 0.9)"
+                style={{ pointerEvents: 'none' }}
+              />
+              <text
+                x={labelPos.x}
+                y={labelPos.y + 16}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#fff"
+                fontSize="9"
+                fontWeight="bold"
+                style={{ pointerEvents: 'none' }}
+              >
+                {approvedCount}/{tile.required_submissions}
+              </text>
+            </>
+          ) : hasPendingSubmission ? (
+            /* Single-item with pending: show "in progress" */
+            <>
+              <rect
+                x={labelPos.x - 28}
+                y={labelPos.y + 8}
+                width="56"
+                height="14"
+                rx="7"
+                fill="rgba(241, 196, 15, 0.9)"
+                style={{ pointerEvents: 'none' }}
+              />
+              <text
+                x={labelPos.x}
+                y={labelPos.y + 16}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#000"
+                fontSize="8"
+                fontWeight="bold"
+                style={{ pointerEvents: 'none' }}
+              >
+                in progress
+              </text>
+            </>
+          ) : null}
+        </g>
       )}
     </g>
   )
@@ -314,6 +360,9 @@ export default function SpiralBoard({
       const hasPendingSubmission = tile && submissions.some(
         s => s.tile_id === tile.id && s.status === 'pending'
       )
+      const approvedCount = tile ? submissions.filter(
+        s => s.tile_id === tile.id && s.status === 'approved'
+      ).length : 0
       segments.push(
         <Segment
           key={`${ring}-${path}`}
@@ -326,6 +375,7 @@ export default function SpiralBoard({
           tile={tile}
           disabled={disabled}
           hasPendingSubmission={hasPendingSubmission}
+          approvedCount={approvedCount}
         />
       )
     }
@@ -444,6 +494,16 @@ export default function SpiralBoard({
             const isThisPathComplete = progress[path] >= activeRing
             const activeTile = !isAllComplete ? tileMap[`${activeRing}-${path}`] : null
             const pathColors = ['#3498db', '#e67e22', '#c0392b']
+
+            // Multi-item info for this tile
+            const isMultiItem = activeTile?.is_multi_item || false
+            const requiredSubmissions = activeTile?.required_submissions || 1
+            const tileApprovedCount = activeTile ? submissions.filter(
+              s => s.tile_id === activeTile.id && s.status === 'approved'
+            ).length : 0
+            const hasPending = activeTile ? submissions.some(
+              s => s.tile_id === activeTile.id && s.status === 'pending'
+            ) : false
             const pathGradients = [
               'linear-gradient(90deg, rgba(52,152,219,0.2) 0%, transparent 100%)',
               'linear-gradient(90deg, rgba(230,126,34,0.2) 0%, transparent 100%)',
@@ -508,9 +568,39 @@ export default function SpiralBoard({
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
                     marginBottom: '0.25rem',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
                     Path {path + 1} {!isAllComplete && `• Ring ${activeRing}`}
+                    {!isAllComplete && !isThisPathComplete && (
+                      isMultiItem ? (
+                        <span style={{
+                          background: '#9b59b6',
+                          color: 'white',
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '8px',
+                          fontSize: '0.65rem',
+                          textTransform: 'none',
+                          letterSpacing: '0'
+                        }}>
+                          {tileApprovedCount}/{requiredSubmissions}
+                        </span>
+                      ) : hasPending ? (
+                        <span style={{
+                          background: '#f1c40f',
+                          color: '#000',
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '8px',
+                          fontSize: '0.65rem',
+                          textTransform: 'none',
+                          letterSpacing: '0'
+                        }}>
+                          in progress
+                        </span>
+                      ) : null
+                    )}
                   </div>
                   <div style={{
                     color: isAllComplete || isThisPathComplete ? '#2ecc71' : '#fff',
