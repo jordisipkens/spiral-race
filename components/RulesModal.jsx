@@ -118,6 +118,35 @@ export default function RulesModal({ isOpen, onClose }) {
             </p>
           </Section>
 
+          {/* Submission Rules */}
+          <Section title="Submission Rules">
+            <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+              <li>Make sure screenshots are <strong>clear and visible</strong> when submitting an image.</li>
+              <li>Make sure the <strong>keyword, date & time</strong> is visible on every screenshot.</li>
+              <li>If on mobile, please join <strong>VPSR cc</strong> whilst also having the codeword written in your chatbox.</li>
+            </ul>
+          </Section>
+
+          {/* Game Settings */}
+          <Section title="Required Game Settings">
+            <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+              <li>Go to your in-game settings and change <strong>minimum item value needed for loot notification to 1 coin</strong>.</li>
+              <li>Go to your in-game settings and turn on <strong>Combat Achievement Tasks - Repeat Completion</strong>.</li>
+            </ul>
+          </Section>
+
+          {/* Important Rules */}
+          <Section title="Important Rules">
+            <Highlight>
+              NO STACKING of any kind is allowed. All progress must be earned during the bingo period and verified properly.
+            </Highlight>
+            <ul style={{ margin: '0.75rem 0', paddingLeft: '1.5rem' }}>
+              <li>Any form of <strong>pre-gathered loot, kills, or achievements</strong> prior to the event start will <strong>not count</strong>.</li>
+              <li>Items <strong>cannot</strong> count for more than 1 tile.</li>
+              <li>Raid uniques do <strong>NOT</strong> include: Vial of Blood, Thread of Elidinis, any of the 4 TOA gems, Cache of Runes, Dark Relic, or Torn Prayer Scroll.</li>
+            </ul>
+          </Section>
+
           {/* Visual Guide */}
           <Section title="Visual Guide">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -128,15 +157,6 @@ export default function RulesModal({ isOpen, onClose }) {
             </div>
           </Section>
 
-          {/* Tips */}
-          <Section title="Tips">
-            <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-              <li>Work on multiple boards simultaneously with your team</li>
-              <li>Coordinate who does which tiles</li>
-              <li>Submit clear screenshots with visible proof</li>
-              <li>The page auto-refreshes every 3 minutes</li>
-            </ul>
-          </Section>
         </div>
       </div>
     </div>
