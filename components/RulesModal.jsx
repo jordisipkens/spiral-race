@@ -83,9 +83,10 @@ export default function RulesModal({ isOpen, onClose }) {
           <Section title="Board System">
             <p>All three boards are available from the start:</p>
             <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-              <li><span style={{ color: '#3498db' }}>Easy</span> - Simple challenges (10 pts each)</li>
-              <li><span style={{ color: '#f39c12' }}>Medium</span> - Moderate challenges (25 pts each)</li>
-              <li><span style={{ color: '#c0392b' }}>Hard</span> - Difficult challenges (50 pts each)</li>
+              <li><span style={{ color: '#3498db' }}>Easy</span> - Simple challenges (1 pt each, multi-item tiles = 1 pt per item)</li>
+              <li><span style={{ color: '#f39c12' }}>Medium</span> - Moderate challenges (5 pts each)</li>
+              <li><span style={{ color: '#c0392b' }}>Hard</span> - Difficult challenges (15 pts each)</li>
+              <li>Center tiles on each board are worth <strong>bonus points</strong></li>
             </ul>
             <p style={{ marginTop: '0.75rem' }}>
               Each board has <strong>5 rings</strong> with <strong>3 tiles per ring</strong>, plus a center tile.
@@ -153,7 +154,7 @@ export default function RulesModal({ isOpen, onClose }) {
               <StatusItem color="rgba(255,255,255,0.25)" label="Locked" description="Ring not yet available" />
               <StatusItem color="#ffd700" label="Active" description="Ready to complete" glow />
               <StatusItem color="#f1c40f" label="Pending" description="Awaiting admin review" icon="⏳" />
-              <StatusItem color="rgba(255,255,255,0.4)" label="Completed" description="Done!" />
+              <StatusItem color="#2ecc71" label="Completed" description="Done!" />
             </div>
           </Section>
 

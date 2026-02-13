@@ -14,17 +14,17 @@ const COLOR_SCHEMES = {
   easy: {
     locked: ['#34495e', '#2c3e50'],
     active: ['#3498db', '#2980b9'],
-    completed: ['#1abc9c', '#16a085']
+    completed: ['#2ecc71', '#27ae60']
   },
   medium: {
     locked: ['#4a4a4a', '#3a3a3a'],
     active: ['#f39c12', '#e67e22'],
-    completed: ['#f1c40f', '#f39c12']
+    completed: ['#2ecc71', '#27ae60']
   },
   hard: {
     locked: ['#3d3d3d', '#2d2d2d'],
     active: ['#c0392b', '#8e44ad'],
-    completed: ['#e74c3c', '#9b59b6']
+    completed: ['#2ecc71', '#27ae60']
   }
 }
 
@@ -102,8 +102,8 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
   const labelPos = getLabelPosition(ringInner, ringOuter, startAngle, endAngle)
 
   const handleClick = () => {
-    // Always show modal on click (for details)
-    if (tile) {
+    // Only show modal for active or completed tiles, not locked
+    if (tile && state !== 'locked') {
       onShowDetails(tile, state, path, ring)
     }
   }
@@ -116,7 +116,7 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
         stroke={hasPendingSubmission ? '#f1c40f' : state === 'active' && !disabled ? '#ffd700' : '#1a1a2e'}
         strokeWidth={hasPendingSubmission ? 4 : state === 'active' && !disabled ? 4 : 2}
         style={{
-          cursor: tile ? 'pointer' : 'default',
+          cursor: tile && state !== 'locked' ? 'pointer' : 'default',
           opacity: state === 'locked' ? 0.25 : state === 'completed' ? 0.4 : disabled ? 0.5 : 1,
           transition: 'all 0.3s ease'
         }}
@@ -128,7 +128,7 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
         textAnchor="middle"
         dominantBaseline="middle"
         fill={state === 'locked' ? '#666' : '#fff'}
-        fontSize="12"
+        fontSize={state === 'locked' ? '18' : '12'}
         fontWeight="bold"
         style={{
           pointerEvents: 'none',
@@ -136,10 +136,10 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
           textShadow: '1px 1px 3px rgba(0,0,0,0.9)'
         }}
       >
-        {tile?.title || `R${ring}P${path + 1}`}
+        {state === 'locked' ? '🔒' : (tile?.title || `R${ring}P${path + 1}`)}
       </text>
       {/* Status badge for tiles */}
-      {state !== 'completed' && tile && (
+      {state !== 'completed' && state !== 'locked' && tile && (
         <g>
           {tile.is_multi_item ? (
             /* Multi-item badge: show X/Y */
@@ -211,7 +211,7 @@ function CenterTile({ boardType, progress, centerCompleted, onClick, onShowDetai
   const gradientId = `grad-${boardType}-${state}`
 
   const handleClick = () => {
-    if (centerTile) {
+    if (centerTile && state !== 'locked') {
       onShowDetails(centerTile, state, null, null)
     }
   }
@@ -226,7 +226,7 @@ function CenterTile({ boardType, progress, centerCompleted, onClick, onShowDetai
         stroke={state === 'active' && !disabled ? '#ffd700' : '#1a1a2e'}
         strokeWidth={state === 'active' && !disabled ? 5 : 4}
         style={{
-          cursor: centerTile ? 'pointer' : 'default',
+          cursor: centerTile && state !== 'locked' ? 'pointer' : 'default',
           opacity: state === 'locked' ? 0.25 : disabled ? 0.5 : 1,
           transition: 'all 0.3s ease'
         }}
