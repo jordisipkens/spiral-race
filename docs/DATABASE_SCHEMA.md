@@ -18,6 +18,7 @@ CREATE TABLE teams (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
+  discord_webhook_url TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -29,6 +30,7 @@ CREATE INDEX idx_teams_slug ON teams(slug);
 | id | UUID | Primary key |
 | name | TEXT | Display name (e.g., "Dragon Slayers") |
 | slug | TEXT | URL-safe identifier (e.g., "dragon-slayers") |
+| discord_webhook_url | TEXT | Discord webhook URL for team channel notifications |
 | created_at | TIMESTAMP | Creation timestamp |
 
 **Usage**: Teams access their board via `/team/[slug]`

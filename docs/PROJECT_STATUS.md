@@ -40,9 +40,12 @@ The application is fully functional and deployed on Vercel.
 - [x] Silent refresh when TileModal opens
 
 ### Discord Integration
-- [x] Webhook notifications when new submissions are created
-- [x] Configurable webhook URL in admin Settings tab
+- [x] Global webhook notifications when new submissions are created
+- [x] Configurable global webhook URL in admin Settings tab
 - [x] Test webhook functionality
+- [x] Per-team Discord webhooks for team channel notifications
+- [x] Approval notification sent to team webhook when submission is approved
+- [x] Ring unlock notification sent to team webhook when a ring is completed
 
 ### Visual Indicators
 - [x] Pending submissions show yellow border + clock icon

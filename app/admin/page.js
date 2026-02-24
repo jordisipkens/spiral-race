@@ -335,7 +335,11 @@ export default function AdminPage() {
     setSaving(true)
     const { error } = await supabase
       .from('teams')
-      .update({ name: team.name, slug: team.slug })
+      .update({
+        name: team.name,
+        slug: team.slug,
+        discord_webhook_url: team.discord_webhook_url?.trim() || null
+      })
       .eq('id', team.id)
 
     if (error) {
@@ -848,6 +852,45 @@ export default function AdminPage() {
                         placeholder="Slug"
                         style={styles.input}
                       />
+                      <div style={styles.webhookSection}>
+                        <label style={{ color: '#aaa', fontSize: '0.9rem', marginBottom: '0.25rem', display: 'block' }}>
+                          Discord Webhook (team channel)
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <input
+                            type="url"
+                            value={editingTeam.discord_webhook_url || ''}
+                            onChange={e => setEditingTeam({ ...editingTeam, discord_webhook_url: e.target.value })}
+                            placeholder="https://discord.com/api/webhooks/..."
+                            style={{ ...styles.input, flex: 1 }}
+                          />
+                          <button
+                            onClick={async () => {
+                              const url = editingTeam.discord_webhook_url?.trim()
+                              if (!url) {
+                                setMessage({ type: 'error', text: 'Enter a webhook URL first' })
+                                return
+                              }
+                              try {
+                                const res = await fetch(url, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ content: `**Test from Spiraal Race!** Webhook for team "${editingTeam.name}" is working.` })
+                                })
+                                setMessage(res.ok
+                                  ? { type: 'success', text: 'Test message sent!' }
+                                  : { type: 'error', text: 'Failed to send. Check URL.' }
+                                )
+                              } catch {
+                                setMessage({ type: 'error', text: 'Failed to send. Check URL.' })
+                              }
+                            }}
+                            style={{ ...styles.editBtn, background: '#9b59b6', whiteSpace: 'nowrap' }}
+                          >
+                            Test
+                          </button>
+                        </div>
+                      </div>
                       <div style={styles.editActions}>
                         <button onClick={() => updateTeam(editingTeam)} disabled={saving} style={styles.saveBtn}>
                           Save
@@ -875,6 +918,11 @@ export default function AdminPage() {
                         <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.25rem' }}>
                           Created: {new Date(team.created_at).toLocaleDateString('en-US')}
                         </div>
+                        {team.discord_webhook_url && (
+                          <div style={{ color: '#9b59b6', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                            Discord webhook configured
+                          </div>
+                        )}
                       </div>
                       <div style={styles.tileActions}>
                         <button
@@ -1392,6 +1440,12 @@ const styles = {
     alignItems: 'center',
     gap: '0.75rem',
     marginTop: '0.75rem'
+  },
+  webhookSection: {
+    background: 'rgba(155, 89, 182, 0.1)',
+    border: '1px solid rgba(155, 89, 182, 0.3)',
+    borderRadius: '6px',
+    padding: '0.75rem'
   },
   multiItemBadge: {
     display: 'inline-block',

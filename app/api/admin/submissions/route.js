@@ -144,6 +144,80 @@ export async function PATCH(request) {
         }
       }
 
+      // Send team Discord webhook notification (non-blocking)
+      try {
+        const { data: teamData } = await supabaseAdmin
+          .from('teams')
+          .select('name, discord_webhook_url')
+          .eq('id', submission.team_id)
+          .single()
+
+        const webhookUrl = teamData?.discord_webhook_url
+        if (webhookUrl) {
+          const tile = submission.tiles
+          const board = tile?.board || 'unknown'
+          const tileTitle = tile?.title || 'Unknown tile'
+
+          // Build approval message based on multi-item status
+          let approvalMessage
+          if (isMultiItem) {
+            if (progressCreated) {
+              approvalMessage = `✅ Submission approved for tile **${tileTitle}** (${board})! All ${requiredCount} items completed - tile done!`
+            } else {
+              approvalMessage = `✅ Submission approved for tile **${tileTitle}** (${board})! Progress: ${approvedCount}/${requiredCount} items completed.`
+            }
+          } else {
+            approvalMessage = `✅ Submission approved for tile **${tileTitle}** (${board})! Tile completed!`
+          }
+
+          // Fire and forget
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: approvalMessage })
+          }).catch(err => console.error('Team webhook failed:', err))
+
+          // Check for ring unlock (only if progress was created)
+          if (progressCreated && tile && !tile.is_center) {
+            const tileRing = tile.ring
+            const tileBoard = tile.board
+
+            // Get all progress for this team on this board
+            const { data: progressData } = await supabaseAdmin
+              .from('progress')
+              .select('tile_id, tiles(ring, path, board, is_center)')
+              .eq('team_id', submission.team_id)
+
+            if (progressData) {
+              // Filter to same board, non-center tiles
+              const boardProgress = progressData.filter(
+                p => p.tiles?.board === tileBoard && !p.tiles?.is_center
+              )
+
+              // Check if all 3 paths in this ring are now complete
+              const ringTiles = boardProgress.filter(p => p.tiles?.ring === tileRing)
+              const completedPaths = new Set(ringTiles.map(p => p.tiles?.path))
+
+              if (completedPaths.size === 3) {
+                // All 3 paths complete in this ring - ring unlocked!
+                const nextRing = tileRing + 1
+                const ringMessage = nextRing <= 5
+                  ? `🔓 Ring ${tileRing} completed on the **${tileBoard}** board! Ring ${nextRing} is now available.`
+                  : `🏆 All rings completed on the **${tileBoard}** board! The center tile is now unlocked!`
+
+                fetch(webhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ content: ringMessage })
+                }).catch(err => console.error('Ring unlock webhook failed:', err))
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error sending team webhook:', err)
+      }
+
       return NextResponse.json({
         success: true,
         submission,
