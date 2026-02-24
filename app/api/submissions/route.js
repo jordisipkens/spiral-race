@@ -51,8 +51,7 @@ export async function POST(request) {
           const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://spiral-race.vercel.app'
           const message = `@here There is a new submission for you guys to approve from team **${teamResult.data.name}** for tile **${tileResult.data.title}** (${tileResult.data.board})!\n[Review submissions](${baseUrl}/admin)`
 
-          // Fire and forget - don't await
-          fetch(webhookUrl, {
+          await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: message })

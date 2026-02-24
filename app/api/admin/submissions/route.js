@@ -170,8 +170,7 @@ export async function PATCH(request) {
             approvalMessage = `✅ Submission approved for tile **${tileTitle}** (${board})! Tile completed!`
           }
 
-          // Fire and forget
-          fetch(webhookUrl, {
+          await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: approvalMessage })
@@ -205,7 +204,7 @@ export async function PATCH(request) {
                   ? `🔓 Ring ${tileRing} completed on the **${tileBoard}** board! Ring ${nextRing} is now available.`
                   : `🏆 All rings completed on the **${tileBoard}** board! The center tile is now unlocked!`
 
-                fetch(webhookUrl, {
+                await fetch(webhookUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ content: ringMessage })
