@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [webhookUrl, setWebhookUrl] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
   const [testingWebhook, setTestingWebhook] = useState(false)
+  const [showLockedTiles, setShowLockedTiles] = useState(true)
 
   // Check auth on mount
   useEffect(() => {
@@ -128,9 +129,22 @@ export default function AdminPage() {
       if (res.ok) {
         const data = await res.json()
         setWebhookUrl(data.settings?.discord_webhook_url || '')
+        setShowLockedTiles(data.settings?.show_locked_tiles !== 'false')
       }
     } catch (error) {
       console.error('Error loading settings:', error)
+    }
+  }
+
+  async function saveShowLockedTiles(value) {
+    try {
+      await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'show_locked_tiles', value: value ? 'true' : 'false' })
+      })
+    } catch (error) {
+      console.error('Error saving show_locked_tiles:', error)
     }
   }
 
@@ -1128,6 +1142,35 @@ export default function AdminPage() {
               </button>
             )}
           </div>
+
+          {/* Board Settings */}
+          <div style={styles.addTeamForm}>
+            <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Board Settings</h3>
+            <div style={styles.settingRow}>
+              <div>
+                <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                  Show locked tiles to teams
+                </div>
+                <div style={{ color: '#aaa', fontSize: '0.85rem' }}>
+                  When off, teams can only see active and completed tiles
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  const newValue = !showLockedTiles
+                  setShowLockedTiles(newValue)
+                  await saveShowLockedTiles(newValue)
+                  setMessage({ type: 'success', text: `Locked tiles ${newValue ? 'visible' : 'hidden'} for teams` })
+                }}
+                style={{
+                  ...styles.toggleBtn,
+                  background: showLockedTiles ? '#2ecc71' : '#e74c3c'
+                }}
+              >
+                {showLockedTiles ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          </div>
         </>
       )}
     </main>
@@ -1440,6 +1483,23 @@ const styles = {
     alignItems: 'center',
     gap: '0.75rem',
     marginTop: '0.75rem'
+  },
+  settingRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '1rem'
+  },
+  toggleBtn: {
+    padding: '0.5rem 1.25rem',
+    border: 'none',
+    borderRadius: '20px',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    minWidth: '60px',
+    flexShrink: 0
   },
   webhookSection: {
     background: 'rgba(155, 89, 182, 0.1)',

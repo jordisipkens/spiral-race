@@ -49,9 +49,13 @@ The application is fully functional and deployed on Vercel.
 
 ### Visual Indicators
 - [x] Pending submissions show yellow border + clock icon
-- [x] Locked tiles at 25% opacity (ring not yet available)
+- [x] Locked tiles at 25% opacity showing tile titles (ring not yet available)
 - [x] Active tiles with gold glow border
 - [x] Completed tiles at 40% opacity
+
+### Admin Settings
+- [x] Global Discord webhook URL configurable
+- [x] Show/hide locked tiles toggle — when OFF, locked tiles are completely hidden; when ON, tiles show their actual titles (no lock icon)
 
 ### User Experience
 - [x] Rules modal popup with game explanation (English)

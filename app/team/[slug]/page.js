@@ -23,6 +23,7 @@ export default function TeamPage() {
   const [saving, setSaving] = useState(false)
   const [submissions, setSubmissions] = useState([])
   const [showRules, setShowRules] = useState(false)
+  const [showLockedTiles, setShowLockedTiles] = useState(true)
 
   // Load team and data
   useEffect(() => {
@@ -146,6 +147,14 @@ export default function TeamPage() {
 
     // Load submissions for this team
     await loadSubmissions(teamData.id)
+
+    // Load show_locked_tiles setting
+    const { data: settingData } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'show_locked_tiles')
+      .maybeSingle()
+    setShowLockedTiles(settingData?.value !== 'false')
 
     setLoading(false)
   }
@@ -383,6 +392,7 @@ export default function TeamPage() {
         teamId={team?.id}
         submissions={submissions}
         onSubmissionComplete={handleSubmissionComplete}
+        showLockedTiles={showLockedTiles}
       />
     </main>
   )

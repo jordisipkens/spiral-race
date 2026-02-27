@@ -78,7 +78,7 @@ function getLabelPosition(innerRadius, outerRadius, startAngle, endAngle) {
   }
 }
 
-function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled, hasPendingSubmission, approvedCount = 0 }) {
+function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled, hasPendingSubmission, approvedCount = 0, showLockedTiles = true }) {
   const ringOuter = OUTER_RADIUS - ((ring - 1) * RING_THICKNESS)
   const ringInner = ringOuter - RING_THICKNESS
   const rotationOffset = (ring - 1) * 18
@@ -96,6 +96,11 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
   } else if (ring === activeRing) {
     // All tiles in the active ring are available
     state = 'active'
+  }
+
+  // Hide locked tiles completely when setting is off
+  if (state === 'locked' && !showLockedTiles) {
+    return <g style={{ opacity: 0, pointerEvents: 'none' }} />
   }
 
   const gradientId = `grad-${boardType}-${state}`
@@ -127,16 +132,16 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
         y={labelPos.y}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill={state === 'locked' ? '#666' : '#fff'}
-        fontSize={state === 'locked' ? '18' : '12'}
+        fill={state === 'locked' ? '#aaa' : '#fff'}
+        fontSize="12"
         fontWeight="bold"
         style={{
           pointerEvents: 'none',
-          opacity: state === 'locked' ? 0.5 : state === 'completed' ? 0.5 : disabled ? 0.6 : 1,
+          opacity: state === 'locked' ? 0.7 : state === 'completed' ? 0.5 : disabled ? 0.6 : 1,
           textShadow: '1px 1px 3px rgba(0,0,0,0.9)'
         }}
       >
-        {state === 'locked' ? '🔒' : (tile?.title || `R${ring}P${path + 1}`)}
+        {tile?.title || `R${ring}P${path + 1}`}
       </text>
       {/* Status badge for tiles */}
       {state !== 'completed' && state !== 'locked' && tile && (
@@ -198,7 +203,7 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
   )
 }
 
-function CenterTile({ boardType, progress, centerCompleted, onClick, onShowDetails, centerTile, disabled }) {
+function CenterTile({ boardType, progress, centerCompleted, onClick, onShowDetails, centerTile, disabled, showLockedTiles = true }) {
   const allPathsComplete = progress.every(p => p >= NUM_RINGS)
 
   let state = 'locked'
@@ -206,6 +211,10 @@ function CenterTile({ boardType, progress, centerCompleted, onClick, onShowDetai
     state = 'completed'
   } else if (allPathsComplete) {
     state = 'active'
+  }
+
+  if (state === 'locked' && !showLockedTiles) {
+    return <g style={{ opacity: 0, pointerEvents: 'none' }} />
   }
 
   const gradientId = `grad-${boardType}-${state}`
@@ -277,7 +286,8 @@ export default function SpiralBoard({
   disabled = false,
   teamId,
   submissions = [],
-  onSubmissionComplete
+  onSubmissionComplete,
+  showLockedTiles = true
 }) {
   const [progress, setProgress] = useState(initialProgress)
   const [centerCompleted, setCenterCompleted] = useState(initialCenterCompleted)
@@ -376,6 +386,7 @@ export default function SpiralBoard({
           disabled={disabled}
           hasPendingSubmission={hasPendingSubmission}
           approvedCount={approvedCount}
+          showLockedTiles={showLockedTiles}
         />
       )
     }
@@ -422,6 +433,7 @@ export default function SpiralBoard({
           onShowDetails={handleShowDetails}
           centerTile={centerTile}
           disabled={disabled}
+          showLockedTiles={showLockedTiles}
         />
       </svg>
 
