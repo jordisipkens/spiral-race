@@ -98,17 +98,15 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
     state = 'active'
   }
 
-  // Hide locked tiles completely when setting is off
-  if (state === 'locked' && !showLockedTiles) {
-    return <g style={{ opacity: 0, pointerEvents: 'none' }} />
-  }
-
   const gradientId = `grad-${boardType}-${state}`
   const labelPos = getLabelPosition(ringInner, ringOuter, startAngle, endAngle)
 
+  // When setting is OFF: locked tiles show 🔒 and are not clickable
+  // When setting is ON: locked tiles show their title and are clickable
+  const isClickable = tile && (state !== 'locked' || showLockedTiles)
+
   const handleClick = () => {
-    // Only show modal for active or completed tiles, not locked
-    if (tile && state !== 'locked') {
+    if (isClickable) {
       onShowDetails(tile, state, path, ring)
     }
   }
@@ -121,7 +119,7 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
         stroke={hasPendingSubmission ? '#f1c40f' : state === 'active' && !disabled ? '#ffd700' : '#1a1a2e'}
         strokeWidth={hasPendingSubmission ? 4 : state === 'active' && !disabled ? 4 : 2}
         style={{
-          cursor: tile && state !== 'locked' ? 'pointer' : 'default',
+          cursor: isClickable ? 'pointer' : 'default',
           opacity: state === 'locked' ? 0.25 : state === 'completed' ? 0.4 : disabled ? 0.5 : 1,
           transition: 'all 0.3s ease'
         }}
@@ -133,7 +131,7 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
         textAnchor="middle"
         dominantBaseline="middle"
         fill={state === 'locked' ? '#aaa' : '#fff'}
-        fontSize="12"
+        fontSize={state === 'locked' && !showLockedTiles ? '18' : '12'}
         fontWeight="bold"
         style={{
           pointerEvents: 'none',
@@ -141,7 +139,7 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
           textShadow: '1px 1px 3px rgba(0,0,0,0.9)'
         }}
       >
-        {tile?.title || `R${ring}P${path + 1}`}
+        {state === 'locked' && !showLockedTiles ? '🔒' : (tile?.title || `R${ring}P${path + 1}`)}
       </text>
       {/* Status badge for tiles */}
       {state !== 'completed' && state !== 'locked' && tile && (
@@ -213,14 +211,12 @@ function CenterTile({ boardType, progress, centerCompleted, onClick, onShowDetai
     state = 'active'
   }
 
-  if (state === 'locked' && !showLockedTiles) {
-    return <g style={{ opacity: 0, pointerEvents: 'none' }} />
-  }
-
   const gradientId = `grad-${boardType}-${state}`
 
+  const isCenterClickable = centerTile && (state !== 'locked' || showLockedTiles)
+
   const handleClick = () => {
-    if (centerTile && state !== 'locked') {
+    if (isCenterClickable) {
       onShowDetails(centerTile, state, null, null)
     }
   }
@@ -235,7 +231,7 @@ function CenterTile({ boardType, progress, centerCompleted, onClick, onShowDetai
         stroke={state === 'active' && !disabled ? '#ffd700' : '#1a1a2e'}
         strokeWidth={state === 'active' && !disabled ? 5 : 4}
         style={{
-          cursor: centerTile && state !== 'locked' ? 'pointer' : 'default',
+          cursor: isCenterClickable ? 'pointer' : 'default',
           opacity: state === 'locked' ? 0.25 : disabled ? 0.5 : 1,
           transition: 'all 0.3s ease'
         }}
