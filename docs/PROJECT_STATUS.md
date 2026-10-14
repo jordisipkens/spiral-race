@@ -1,6 +1,6 @@
 # Project Status - Spiraal Race
 
-Last updated: February 2026
+Last updated: October 2026
 
 ## Current State: Production Ready
 
@@ -70,6 +70,7 @@ The application is fully functional and deployed on Vercel.
 | Database | Supabase PostgreSQL |
 | Storage | Supabase Storage |
 | Hosting | Vercel |
+| Runtime | Node.js 24.x (pinned via `engines` in package.json) |
 | Styling | Inline CSS-in-JS |
 
 ## File Overview
