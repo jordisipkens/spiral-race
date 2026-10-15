@@ -172,8 +172,9 @@ CREATE INDEX idx_settings_key ON settings(key);
 ```
 proof-images/
 ├── {team_id}/
-│   ├── {tile_id}_{timestamp}.jpg
-│   ├── {tile_id}_{timestamp}.png
+│   ├── {tile_id}/
+│   │   ├── {timestamp}.jpg
+│   │   ├── {timestamp}.png
 │   └── ...
 ```
 

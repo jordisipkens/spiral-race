@@ -30,7 +30,8 @@ spiral-race-project/
 │   └── api/
 │       ├── admin/
 │       │   ├── auth/route.js      # Admin authentication
-│       │   └── submissions/route.js  # Submission management
+│       │   ├── submissions/route.js  # Submission management
+│       │   └── tiles/reset/route.js  # Reset all tiles of a board
 │       └── submissions/
 │           ├── route.js           # Create/list submissions
 │           └── upload/route.js    # Image upload to Supabase Storage
@@ -66,6 +67,7 @@ spiral-race-project/
 - Password-protected admin panel
 - Manage tiles (title, description, points per position)
 - Multi-item tiles: configure tiles requiring multiple submissions to complete
+- Reset all tiles of a board (deletes its tiles, submissions, screenshots and progress, then regenerates defaults)
 - Create and manage teams with unique slugs
 - Review pending submissions with full-screen image viewer
 - View related approved submissions for multi-item tiles

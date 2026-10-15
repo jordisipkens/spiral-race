@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import SubmissionCard from '../../components/SubmissionCard'
+import { buildMissingTiles } from '../../lib/tiles'
 
 const BOARDS = ['easy', 'medium', 'hard']
 const BOARD_COLORS = {
@@ -403,39 +404,7 @@ export default function AdminPage() {
   // Generate all tiles for a board
   async function generateTilesForBoard(board) {
     setSaving(true)
-    const newTiles = []
-
-    for (let ring = 1; ring <= 5; ring++) {
-      for (let path = 0; path < 3; path++) {
-        const exists = tiles.find(t =>
-          t.board === board && t.ring === ring && t.path === path && !t.is_center
-        )
-        if (!exists) {
-          newTiles.push({
-            board,
-            ring,
-            path,
-            title: `${board.charAt(0).toUpperCase() + board.slice(1)} R${ring}P${path + 1}`,
-            description: '',
-            points: board === 'easy' ? 10 : board === 'medium' ? 25 : 50,
-            is_center: false
-          })
-        }
-      }
-    }
-
-    const centerExists = tiles.find(t => t.board === board && t.is_center)
-    if (!centerExists) {
-      newTiles.push({
-        board,
-        ring: 1,
-        path: 0,
-        title: `${board.charAt(0).toUpperCase() + board.slice(1)} Center`,
-        description: 'Complete all tiles to unlock this!',
-        points: board === 'easy' ? 100 : board === 'medium' ? 200 : 500,
-        is_center: true
-      })
-    }
+    const newTiles = buildMissingTiles(board, tiles)
 
     if (newTiles.length > 0) {
       const { error } = await supabase.from('tiles').insert(newTiles)
@@ -450,6 +419,39 @@ export default function AdminPage() {
       setMessage({ type: 'info', text: `All tiles for ${board} already exist` })
     }
 
+    setSaving(false)
+  }
+
+  // Delete all tiles for a board and regenerate defaults.
+  // Submissions, progress and screenshots on these tiles are removed server-side.
+  async function resetTilesForBoard(board) {
+    if (!confirm(`Are you sure you want to reset all ${board} tiles?\n\nAll tiles on this board will be deleted and regenerated with default values. All submissions, screenshots and team progress on the ${board} board will be permanently deleted. This cannot be undone!`)) return
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/tiles/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ board })
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        console.error('Error resetting tiles:', data.error)
+        setMessage({ type: 'error', text: data.error || `Error resetting ${board} tiles` })
+      } else if (data.imagesFailed > 0) {
+        setMessage({ type: 'error', text: `${board} tiles reset, but ${data.imagesFailed} screenshot(s) could not be deleted from storage.` })
+      } else {
+        setMessage({ type: 'success', text: `All ${board} tiles have been reset! (${data.submissionsDeleted} submissions and ${data.imagesDeleted} screenshots deleted)` })
+      }
+    } catch (error) {
+      console.error('Error resetting tiles:', error)
+      setMessage({ type: 'error', text: `Error resetting ${board} tiles` })
+    }
+
+    setEditingTile(null)
+    loadTiles()
+    loadSubmissions()
     setSaving(false)
   }
 
@@ -705,6 +707,18 @@ export default function AdminPage() {
               }}
             >
               {saving ? 'Working...' : `Generate all ${activeBoard} tiles`}
+            </button>
+            <button
+              onClick={() => resetTilesForBoard(activeBoard)}
+              disabled={saving}
+              style={{
+                ...styles.generateBtn,
+                background: '#e74c3c',
+                marginLeft: '0.75rem',
+                opacity: saving ? 0.5 : 1
+              }}
+            >
+              {saving ? 'Working...' : `Reset all ${activeBoard} tiles`}
             </button>
           </div>
 

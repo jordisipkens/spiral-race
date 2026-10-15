@@ -33,6 +33,7 @@ The application is fully functional and deployed on Vercel.
 - [x] Multi-item tiles: configure tiles requiring multiple submissions
 - [x] View related approved submissions when reviewing multi-item tiles
 - [x] Reviewed submissions tab: view approved/rejected submission history
+- [x] Reset board tiles: delete and regenerate all tiles of one board, including its submissions, screenshots and progress (see `docs/features/reset-board-tiles.md`)
 
 ### Auto-refresh Features
 - [x] Team pages: Auto-refresh every 3 minutes
@@ -99,11 +100,13 @@ The application is fully functional and deployed on Vercel.
 | `/api/admin/submissions` | GET, PATCH | Review submissions |
 | `/api/admin/auth` | POST | Verify admin password |
 | `/api/admin/settings` | GET, PATCH | Manage app settings (Discord webhook) |
+| `/api/admin/tiles/reset` | POST | Reset all tiles of a board (incl. submissions, progress, screenshots) |
 
 ### Libraries
 | File | Purpose |
 |------|---------|
 | `lib/supabase.js` | Supabase client initialization |
+| `lib/tiles.js` | Default tile generation (`buildMissingTiles`) |
 
 ## Environment Variables
 
@@ -142,6 +145,9 @@ Teams can submit multiple images for a tile. If one is rejected, they can resubm
 
 ### Why auto-refresh instead of real-time?
 Polling is simpler to implement and sufficient for the use case. Team pages refresh every 3 minutes, admin panel every 1 minute.
+
+### Why reset tiles by delete + regenerate?
+Resetting a board is meant for starting a new event, so old submissions, screenshots and progress must go too. Deleting the tiles removes submissions and progress via `ON DELETE CASCADE`; screenshots are deleted from storage by a server-side API route (service role key). It is per board and behind a confirmation dialog to limit mistakes.
 
 ### Why inline styles?
 Keeps component code self-contained and makes it easy to copy/modify without managing separate CSS files.
