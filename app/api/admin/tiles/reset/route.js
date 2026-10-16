@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isAdminRequest } from '../../../../../lib/auth'
 import { createClient } from '@supabase/supabase-js'
 import { buildMissingTiles } from '../../../../../lib/tiles'
 
@@ -10,12 +11,6 @@ const supabaseAdmin = createClient(
 const BUCKET = 'proof-images'
 const BOARDS = ['easy', 'medium', 'hard']
 
-// Check admin auth
-function isAuthenticated(request) {
-  const token = request.cookies.get('admin_token')
-  return !!token
-}
-
 // Extract the storage path from a public URL: .../object/public/proof-images/{path}
 function storagePathFromUrl(url) {
   const marker = `/object/public/${BUCKET}/`
@@ -25,7 +20,7 @@ function storagePathFromUrl(url) {
 
 // POST - Delete all tiles of a board (incl. submissions, progress and screenshots) and regenerate defaults
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAdminRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -1,4 +1,6 @@
+import { Suspense } from 'react'
 import './globals.css'
+import Sidebar from '../components/Sidebar'
 
 export const metadata = {
   title: 'Spiral Race - OSRS Clan Event',
@@ -8,7 +10,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="nl">
-      <body>{children}</body>
+      <body>
+        {/* Sidebar reads search params, which requires a Suspense boundary */}
+        <Suspense fallback={null}>
+          <Sidebar />
+        </Suspense>
+        <div className="app-content">{children}</div>
+      </body>
     </html>
   )
 }

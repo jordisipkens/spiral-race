@@ -1,4 +1,12 @@
 import { NextResponse } from 'next/server'
+import {
+  ADMIN_COOKIE,
+  ADMIN_SESSION_SECONDS,
+  createToken,
+  isAdminRequest,
+  sessionCookieOptions
+} from '../../../../lib/auth'
+import { safeEqual } from '../../../../lib/passwords'
 
 export async function POST(request) {
   try {
@@ -13,20 +21,12 @@ export async function POST(request) {
       )
     }
 
-    if (password === adminPassword) {
-      // Create a simple token (in production, use JWT or similar)
-      const token = Buffer.from(`admin:${Date.now()}`).toString('base64')
+    if (typeof password === 'string' && safeEqual(password, adminPassword)) {
+      // Signed token, verified by middleware and isAdminRequest()
+      const token = await createToken({ role: 'admin' }, ADMIN_SESSION_SECONDS)
 
       const response = NextResponse.json({ success: true })
-
-      // Set HTTP-only cookie for security
-      response.cookies.set('admin_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 // 24 hours
-      })
-
+      response.cookies.set(ADMIN_COOKIE, token, sessionCookieOptions(ADMIN_SESSION_SECONDS))
       return response
     }
 
@@ -43,24 +43,11 @@ export async function POST(request) {
 }
 
 export async function GET(request) {
-  const token = request.cookies.get('admin_token')
-
-  if (token) {
-    return NextResponse.json({ authenticated: true })
-  }
-
-  return NextResponse.json({ authenticated: false })
+  return NextResponse.json({ authenticated: await isAdminRequest(request) })
 }
 
 export async function DELETE() {
   const response = NextResponse.json({ success: true })
-
-  response.cookies.set('admin_token', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 0
-  })
-
+  response.cookies.set(ADMIN_COOKIE, '', sessionCookieOptions(0))
   return response
 }

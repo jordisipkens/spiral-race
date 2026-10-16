@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import SubmissionCard from '../../components/SubmissionCard'
 import { buildMissingTiles } from '../../lib/tiles'
@@ -12,14 +13,19 @@ const BOARD_COLORS = {
   hard: '#c0392b'
 }
 
-export default function AdminPage() {
+function AdminContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authChecking, setAuthChecking] = useState(true)
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState(null)
 
-  const [activeSection, setActiveSection] = useState('tiles') // 'tiles' or 'teams'
+  // Active section lives in the URL (?section=...), so the sidebar can link to it
+  const activeSection = searchParams.get('section') || 'tiles'
+  const setActiveSection = section => router.replace(`/admin?section=${section}`)
   const [tiles, setTiles] = useState([])
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
@@ -45,6 +51,11 @@ export default function AdminPage() {
   const [savingWom, setSavingWom] = useState(false)
   const [refreshingWom, setRefreshingWom] = useState(false)
   const [womInfo, setWomInfo] = useState(null) // { title, participants, fetchedAt }
+
+  // Team passwords
+  const [teamsWithPassword, setTeamsWithPassword] = useState([]) // team ids
+  const [passwordTeamId, setPasswordTeamId] = useState(null) // team whose password form is open
+  const [newTeamPassword, setNewTeamPassword] = useState('')
 
   // Check auth on mount
   useEffect(() => {
@@ -124,7 +135,7 @@ export default function AdminPage() {
 
   async function loadData() {
     setLoading(true)
-    await Promise.all([loadTiles(), loadTeams(), loadSubmissions(), loadSettings()])
+    await Promise.all([loadTiles(), loadTeams(), loadSubmissions(), loadSettings(), loadTeamPasswords()])
     setLoading(false)
   }
 
@@ -348,6 +359,39 @@ export default function AdminPage() {
       console.error('Error loading tiles:', error)
     } else {
       setTiles(data || [])
+    }
+  }
+
+  async function loadTeamPasswords() {
+    try {
+      const res = await fetch('/api/admin/teams/password')
+      if (res.ok) {
+        const data = await res.json()
+        setTeamsWithPassword(data.teamIds || [])
+      }
+    } catch (error) {
+      console.error('Error loading team passwords:', error)
+    }
+  }
+
+  async function saveTeamPassword(team) {
+    try {
+      const res = await fetch('/api/admin/teams/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId: team.id, password: newTeamPassword })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setMessage({ type: 'success', text: `Password set for ${team.name}` })
+        setPasswordTeamId(null)
+        setNewTeamPassword('')
+        loadTeamPasswords()
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to set password' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to set password' })
     }
   }
 
@@ -1004,6 +1048,36 @@ export default function AdminPage() {
                             Discord webhook configured
                           </div>
                         )}
+                        <div style={{
+                          color: teamsWithPassword.includes(team.id) ? '#2ecc71' : '#e67e22',
+                          fontSize: '0.8rem',
+                          marginTop: '0.25rem'
+                        }}>
+                          {teamsWithPassword.includes(team.id)
+                            ? '🔒 Password set'
+                            : '⚠️ No password: team page is locked until you set one'}
+                        </div>
+                        {passwordTeamId === team.id && (
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                            <input
+                              type="text"
+                              value={newTeamPassword}
+                              onChange={e => setNewTeamPassword(e.target.value)}
+                              placeholder="New team password (min. 4 characters)"
+                              style={{ ...styles.input, flex: 1, minWidth: '200px' }}
+                              autoFocus
+                            />
+                            <button onClick={() => saveTeamPassword(team)} style={styles.saveBtn}>
+                              Save
+                            </button>
+                            <button
+                              onClick={() => { setPasswordTeamId(null); setNewTeamPassword('') }}
+                              style={styles.cancelBtn}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div style={styles.tileActions}>
                         <button
@@ -1017,6 +1091,12 @@ export default function AdminPage() {
                         </button>
                         <button onClick={() => setEditingTeam({ ...team })} style={styles.editBtn}>
                           Edit
+                        </button>
+                        <button
+                          onClick={() => { setPasswordTeamId(team.id); setNewTeamPassword('') }}
+                          style={{ ...styles.editBtn, background: '#16a085' }}
+                        >
+                          {teamsWithPassword.includes(team.id) ? 'Change Password' : 'Set Password'}
                         </button>
                         <button
                           onClick={() => resetTeamProgress(team.id, team.name)}
@@ -1291,6 +1371,15 @@ export default function AdminPage() {
         </>
       )}
     </main>
+  )
+}
+
+export default function AdminPage() {
+  // useSearchParams requires a Suspense boundary in the App Router
+  return (
+    <Suspense fallback={null}>
+      <AdminContent />
+    </Suspense>
   )
 }
 

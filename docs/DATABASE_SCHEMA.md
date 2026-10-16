@@ -9,6 +9,7 @@ Supabase PostgreSQL database with 5 main tables:
 - `submissions` - Evidence uploads with approval workflow
 - `settings` - App configuration (Discord webhook, etc.)
 - `wom_cache` - Cached WiseOldMan competition data for the stats page
+- `team_passwords` - Hashed password per team (server-side only)
 
 ## Tables
 
@@ -165,6 +166,29 @@ CREATE INDEX idx_settings_key ON settings(key);
 - `discord_webhook_url` - Discord webhook URL for notifications
 - `show_locked_tiles` - `'true'`/`'false'`, show locked tiles to teams
 - `wom_competition_id` - WiseOldMan competition ID used by `/stats`
+
+---
+
+### team_passwords
+
+**Purpose**: Hashed team page password per team (see [features/team-authentication.md](./features/team-authentication.md)). Kept out of `teams` because that table is readable with the anon key.
+
+```sql
+CREATE TABLE team_passwords (
+  team_id UUID PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE team_passwords ENABLE ROW LEVEL SECURITY;
+```
+
+| Column | Type | Description |
+|--------|------|-------------|
+| team_id | UUID | Reference to teams.id (primary key, cascades on delete) |
+| password_hash | TEXT | `scrypt$<salt>$<hash>` from `lib/passwords.js` |
+| updated_at | TIMESTAMPTZ | Last password change |
+
+**Access**: Service role only (RLS enabled, no policies). A team without a row here can't log in.
 
 ---
 

@@ -26,6 +26,7 @@ spiral-race-project/
 │   │   └── page.js                # Admin panel (tiles, teams, submissions)
 │   ├── stats/
 │   │   └── page.js                # Event stats (WiseOldMan)
+│   ├── team/[slug]/login/page.js  # Team password login
 │   ├── team/
 │   │   └── [slug]/
 │       └── page.js                # Team board page
@@ -54,6 +55,11 @@ spiral-race-project/
 
 ## Features
 
+### Navigation & Access
+- Sidebar on every page: Home, Stats, all team pages (🔒/🔓) and the admin sections; drawer on mobile
+- Team pages are protected with a password per team; a login stays valid for a week
+- `/` and `/stats` are public
+
 ### Team Features
 - View spiral board with 3 difficulty levels (Easy, Medium, Hard)
 - All boards available from start
@@ -70,7 +76,8 @@ spiral-race-project/
   - Activities per team (clue scrolls per tier, Guardians of the Rift, Colosseum Glory, Collection Log)
 
 ### Admin Features
-- Password-protected admin panel
+- Password-protected admin panel (signed session cookie, 24 hours)
+- Set or change a password per team (Teams tab)
 - Manage tiles (title, description, points per position)
 - Multi-item tiles: configure tiles requiring multiple submissions to complete
 - Reset all tiles of a board (deletes its tiles, submissions, screenshots and progress, then regenerates defaults)
@@ -104,6 +111,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ADMIN_PASSWORD=your-admin-password
 WOM_API_KEY=optional-wiseoldman-api-key
+AUTH_SECRET=optional-cookie-signing-secret
 ```
 
 ### Database Setup
@@ -170,6 +178,14 @@ CREATE TABLE wom_cache (
   PRIMARY KEY (competition_id, metric)
 );
 ALTER TABLE wom_cache ENABLE ROW LEVEL SECURITY;
+
+-- Team passwords (server-side only)
+CREATE TABLE team_passwords (
+  team_id UUID PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE team_passwords ENABLE ROW LEVEL SECURITY;
 ```
 
 ### Storage Setup
@@ -229,7 +245,16 @@ Get all pending submissions (for admin review).
 Approve or reject a submission.
 
 ### POST /api/admin/auth
-Verify admin password.
+Verify admin password and set a signed admin cookie.
+
+### POST /api/team/auth
+Log in to a team page (`{ slug, password }`); sets a 7-day team cookie. `DELETE ?slug=` logs out.
+
+### GET /api/session
+Which admin/team sessions the browser has (used by the sidebar).
+
+### GET, POST /api/admin/teams/password
+List teams with a password / set a team password (admin only).
 
 ### GET /api/stats
 Cached EHB, boss and activity stats for the configured WiseOldMan competition (refreshed from WOM at most every 15 minutes).

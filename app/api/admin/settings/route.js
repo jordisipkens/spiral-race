@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isAdminRequest } from '../../../../lib/auth'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
@@ -6,15 +7,9 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// Check admin auth
-function isAuthenticated(request) {
-  const token = request.cookies.get('admin_token')
-  return !!token
-}
-
 // GET - Fetch all settings
 export async function GET(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAdminRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -45,7 +40,7 @@ export async function GET(request) {
 
 // PATCH - Update a setting
 export async function PATCH(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAdminRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

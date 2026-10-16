@@ -16,6 +16,12 @@ The application is fully functional and deployed on Vercel.
 - [x] Center tile unlocking when all 15 outer tiles complete
 - [x] Team-specific URLs with unique slugs
 
+### Navigation & Access Control
+- [x] Sidebar on every page (Home, Stats, team pages with 🔒/🔓, admin sections, Log out); drawer on mobile (see `docs/features/navigation-sidebar.md`)
+- [x] Team pages protected with a password per team, session valid for 7 days (see `docs/features/team-authentication.md`)
+- [x] Admin login with HMAC-signed cookie; middleware guards `/team/[slug]`, `/api/admin/*` and `/api/submissions/*`
+- [x] Submission routes check that the `team_id` belongs to the logged-in team
+
 ### Evidence Submission System
 - [x] Image upload to Supabase Storage
 - [x] Multiple submissions per tile allowed
@@ -93,6 +99,7 @@ The application is fully functional and deployed on Vercel.
 | `app/page.js` | Homepage (demo board) |
 | `app/team/[slug]/page.js` | Team board view with submissions |
 | `app/admin/page.js` | Admin panel for tiles, teams, submissions |
+| `app/team/[slug]/login/page.js` | Team password login |
 | `app/stats/page.js` | Public event stats (EHB, bosses, activities) with team filter |
 
 ### Components
@@ -103,6 +110,7 @@ The application is fully functional and deployed on Vercel.
 | `components/BoardTabs.jsx` | Easy/Medium/Hard tab navigation |
 | `components/SubmissionCard.jsx` | Submission display for admin |
 | `components/RulesModal.jsx` | Game rules popup |
+| `components/Sidebar.jsx` | Navigation sidebar (responsive drawer) |
 | `components/EhbBarChart.jsx` | Horizontal CSS bar chart (+ `formatEhb`) |
 | `components/EhbTable.jsx` | Player EHB table |
 | `components/TeamMetricTable.jsx` | Bosses/activities table with teams as columns |
@@ -116,6 +124,9 @@ The application is fully functional and deployed on Vercel.
 | `/api/admin/auth` | POST | Verify admin password |
 | `/api/admin/settings` | GET, PATCH | Manage app settings (Discord webhook) |
 | `/api/admin/tiles/reset` | POST | Reset all tiles of a board (incl. submissions, progress, screenshots) |
+| `/api/team/auth` | POST, DELETE | Team login (7-day cookie) / logout |
+| `/api/session` | GET | Current admin/team sessions (sidebar) |
+| `/api/admin/teams/password` | GET, POST | Team password status / set password |
 | `/api/stats` | GET | Public cached EHB, boss and activity stats from WiseOldMan |
 | `/api/admin/stats/refresh` | POST | Force a refresh of the WiseOldMan cache |
 
@@ -125,6 +136,10 @@ The application is fully functional and deployed on Vercel.
 | `lib/supabase.js` | Supabase client initialization |
 | `lib/tiles.js` | Default tile generation (`buildMissingTiles`) |
 | `lib/wiseoldman.js` | WiseOldMan API client + normalization (`fetchCompetition`) |
+| `lib/auth.js` | Signed session tokens, admin/team access checks (Edge-compatible) |
+| `lib/passwords.js` | scrypt password hashing |
+| `lib/supabaseAdmin.js` | Shared service-role Supabase client (`no-store`) |
+| `middleware.js` | Route protection for team pages and admin/submission APIs |
 | `lib/statsMetrics.js` | Boss/activity metric lists, display names, `buildMetricRows` |
 | `lib/womStats.js` | `wom_cache` handling with 15-min lazy refresh (`getCompetitionStats`) |
 
@@ -138,6 +153,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ADMIN_PASSWORD=your-password
 WOM_API_KEY=optional-wiseoldman-api-key
+AUTH_SECRET=optional-cookie-signing-secret
 ```
 
 ## Database Tables
@@ -148,6 +164,7 @@ WOM_API_KEY=optional-wiseoldman-api-key
 4. **submissions** - Evidence uploads with status
 5. **settings** - App configuration (Discord webhook URL, WOM competition ID)
 6. **wom_cache** - Cached WiseOldMan competition data for `/stats`
+7. **team_passwords** - Hashed team passwords (service role only)
 
 See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for full details.
 
@@ -178,6 +195,13 @@ Resetting a board is meant for starting a new event, so old submissions, screens
 - **Alternatives Considered**: Vercel Cron, Next.js fetch cache (not shared between serverless instances), calling WOM from the browser.
 - **Trade-offs**: The first visitor after the TTL waits for one WOM call.
 
+### Why signed cookies + middleware (and not full server-side data access)?
+- **Date**: October 2026
+- **Decision**: HMAC-signed session cookies, verified in `middleware.js` for team pages and admin/submission APIs. Team passwords are scrypt-hashed in a separate `team_passwords` table.
+- **Rationale**: The old admin check accepted any cookie named `admin_token`. Signed tokens fix that and work in the Edge middleware without a database call.
+- **Alternatives Considered**: Moving all Supabase reads/writes server-side and locking RLS (fully closed, much more work), Supabase Auth.
+- **Trade-offs**: Data is still reachable via the public anon key for technically skilled users; chosen deliberately for now.
+
 ### Why inline styles?
 Keeps component code self-contained and makes it easy to copy/modify without managing separate CSS files.
 
@@ -188,12 +212,12 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 - [x] ~~Discord webhook notifications~~ (Completed February 2026)
 - [ ] OCR validation for OSRS screenshots
 - [ ] Export results to Excel/CSV
-- [ ] Team authentication (currently teams access via slug URL)
+- [x] ~~Team authentication~~ (Completed October 2026)
 - [x] ~~Required submissions count per tile~~ (Completed February 2026)
 
 ## Known Limitations
 
-1. **No team auth**: Anyone with the team URL can submit evidence
+1. **Anon key access**: Pages are password-protected, but the anon Supabase key still allows direct data access
 2. **Manual refresh**: Teams need to wait for auto-refresh or refresh manually
 3. **Single admin password**: All admins share one password
 4. **No image compression**: Large uploads may be slow
@@ -211,3 +235,4 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 - Added EHB stats page (`/stats`) with WiseOldMan integration, DB cache (`wom_cache`) and team filter (see `docs/features/wom-ehb-stats.md`)
 - Fixed "No competition configured" caused by the Next.js fetch cache (Supabase client in `lib/womStats.js` now uses `cache: 'no-store'`)
 - Added Bosses and Activities tabs per team to `/stats`; `/api/stats/ehb` renamed to `/api/stats`
+- Added navigation sidebar and per-team passwords (7-day sessions); admin login now uses a signed cookie

@@ -18,3 +18,69 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* App shell with sidebar navigation (components/Sidebar.jsx) */
+.app-content {
+  margin-left: 240px;
+  min-width: 0;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 240px;
+  padding: 1.5rem 0;
+  overflow-y: auto;
+  background: rgba(10, 14, 30, 0.95);
+  border-right: 1px solid rgba(255, 215, 0, 0.15);
+  z-index: 100;
+  transition: transform 0.25s ease;
+}
+
+.sidebar-toggle,
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app-content {
+    margin-left: 0;
+    padding-top: 3rem;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: none;
+  }
+
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    z-index: 110;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 8px;
+    background: rgba(10, 14, 30, 0.95);
+    color: #ffd700;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+  }
+}

@@ -107,6 +107,19 @@ VALUES
   ('hard', 0, 0, 'Hard Center', 500, true);
 ```
 
+### Team Passwords
+
+```sql
+CREATE TABLE team_passwords (
+  team_id UUID PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE team_passwords ENABLE ROW LEVEL SECURITY;
+```
+
+Set a password per team in Admin → Teams; team pages stay locked until then.
+
 ### WiseOldMan Stats Cache (optional, for `/stats`)
 
 ```sql
@@ -137,6 +150,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ADMIN_PASSWORD=choose-a-secure-password
+# Optional: secret for signing login cookies (falls back to ADMIN_PASSWORD)
+AUTH_SECRET=
 # Optional: WiseOldMan API key for a higher rate limit
 WOM_API_KEY=
 ```

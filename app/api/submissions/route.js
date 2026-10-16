@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { canActForTeam } from '../../../lib/auth'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
@@ -16,6 +17,10 @@ export async function POST(request) {
         { error: 'Missing required fields: team_id, tile_id, image_url' },
         { status: 400 }
       )
+    }
+
+    if (!(await canActForTeam(request, team_id))) {
+      return NextResponse.json({ error: 'Not logged in for this team' }, { status: 403 })
     }
 
     // Create submission record
@@ -79,6 +84,10 @@ export async function GET(request) {
 
     if (!team_id) {
       return NextResponse.json({ error: 'team_id is required' }, { status: 400 })
+    }
+
+    if (!(await canActForTeam(request, team_id))) {
+      return NextResponse.json({ error: 'Not logged in for this team' }, { status: 403 })
     }
 
     let query = supabaseAdmin

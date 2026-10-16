@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server'
+import { isAdminRequest } from '../../../../../lib/auth'
 import { getCompetitionStats } from '../../../../../lib/womStats'
-
-// Check admin auth
-function isAuthenticated(request) {
-  const token = request.cookies.get('admin_token')
-  return !!token
-}
 
 // POST - Force a refresh of the WiseOldMan cache (bypasses the TTL)
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAdminRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
