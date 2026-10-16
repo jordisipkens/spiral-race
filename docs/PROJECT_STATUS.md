@@ -73,6 +73,7 @@ The application is fully functional and deployed on Vercel.
 ### Admin Settings
 - [x] Global Discord webhook URL configurable
 - [x] Show/hide locked tiles toggle — when OFF, locked tiles are completely hidden; when ON, tiles show their actual titles (no lock icon)
+  - Applies to the team pages and the homepage demo board
 - [x] WiseOldMan competition ID for the EHB stats page
 
 ### User Experience
@@ -236,3 +237,4 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 - Fixed "No competition configured" caused by the Next.js fetch cache (Supabase client in `lib/womStats.js` now uses `cache: 'no-store'`)
 - Added Bosses and Activities tabs per team to `/stats`; `/api/stats/ehb` renamed to `/api/stats`
 - Added navigation sidebar and per-team passwords (7-day sessions); admin login now uses a signed cookie
+- Homepage demo board now respects the show/hide locked tiles setting

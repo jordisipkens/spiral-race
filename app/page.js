@@ -14,6 +14,7 @@ export default function Home() {
     hard: { paths: [0, 0, 0], centerCompleted: false }
   })
   const [loading, setLoading] = useState(true)
+  const [showLockedTiles, setShowLockedTiles] = useState(true)
 
   // Load tiles from database
   useEffect(() => {
@@ -38,6 +39,15 @@ export default function Home() {
       })
 
       setTiles(grouped)
+
+      // Same show_locked_tiles setting as the team pages
+      const { data: settingData } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'show_locked_tiles')
+        .maybeSingle()
+      setShowLockedTiles(settingData?.value !== 'false')
+
       setLoading(false)
     }
 
@@ -144,6 +154,7 @@ export default function Home() {
         initialCenterCompleted={currentProgress.centerCompleted}
         onTileComplete={handleTileComplete}
         onCenterComplete={handleCenterComplete}
+        showLockedTiles={showLockedTiles}
       />
     </main>
   )
