@@ -25,7 +25,7 @@ spiral-race-project/
 │   ├── admin/
 │   │   └── page.js                # Admin panel (tiles, teams, submissions)
 │   ├── stats/
-│   │   └── page.js                # EHB stats (WiseOldMan)
+│   │   └── page.js                # Event stats (WiseOldMan)
 │   ├── team/
 │   │   └── [slug]/
 │       └── page.js                # Team board page
@@ -64,7 +64,10 @@ spiral-race-project/
 - Full-screen image viewer for uploaded evidence
 - Rules popup explaining game mechanics
 - Auto-refresh every 3 minutes for progress updates
-- EHB stats page (`/stats`): EHB gained per player during the event from a WiseOldMan competition, with a filter per team
+- Stats page (`/stats`) from a WiseOldMan competition, with a filter per team:
+  - EHB gained per player and per team
+  - Boss kills per team (all bosses with at least 1 kill)
+  - Activities per team (clue scrolls per tier, Guardians of the Rift, Colosseum Glory, Collection Log)
 
 ### Admin Features
 - Password-protected admin panel
@@ -161,7 +164,7 @@ CREATE INDEX idx_progress_team ON progress(team_id);
 -- WiseOldMan cache (for /stats)
 CREATE TABLE wom_cache (
   competition_id INTEGER NOT NULL,
-  metric TEXT NOT NULL DEFAULT 'ehb',
+  metric TEXT NOT NULL DEFAULT 'all',
   data JSONB NOT NULL,
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (competition_id, metric)
@@ -228,8 +231,8 @@ Approve or reject a submission.
 ### POST /api/admin/auth
 Verify admin password.
 
-### GET /api/stats/ehb
-Cached EHB stats for the configured WiseOldMan competition (refreshed from WOM at most every 15 minutes).
+### GET /api/stats
+Cached EHB, boss and activity stats for the configured WiseOldMan competition (refreshed from WOM at most every 15 minutes).
 
 ### POST /api/admin/stats/refresh
 Force a refresh of the WiseOldMan cache (admin only).

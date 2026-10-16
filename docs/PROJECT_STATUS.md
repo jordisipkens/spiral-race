@@ -48,12 +48,14 @@ The application is fully functional and deployed on Vercel.
 - [x] Approval notification sent to team webhook when submission is approved
 - [x] Ring unlock notification sent to team webhook when a ring is completed
 
-### EHB Stats (WiseOldMan)
+### Event Stats (WiseOldMan)
 - [x] Public `/stats` page with EHB gained per player during the event (bar chart + table)
+- [x] Bosses tab: kills per team for every boss with at least 1 kill, winning team marked, click for top players
+- [x] Activities tab: clue scrolls (all + per tier), Guardians of the Rift, Colosseum Glory, Collection Log per team
 - [x] Team filter ("All players" + one button per WOM team) and team totals chart
 - [x] Data from a WiseOldMan competition, cached in `wom_cache` and refreshed at most every 15 minutes (lazy refresh)
 - [x] Admin Settings: competition ID + "Refresh now"
-- [x] "EHB Stats" button on team pages links to `/stats?team=<team name>`
+- [x] "Stats" button on team pages links to `/stats?team=<team name>`
 - See `docs/features/wom-ehb-stats.md`
 
 ### Visual Indicators
@@ -91,7 +93,7 @@ The application is fully functional and deployed on Vercel.
 | `app/page.js` | Homepage (demo board) |
 | `app/team/[slug]/page.js` | Team board view with submissions |
 | `app/admin/page.js` | Admin panel for tiles, teams, submissions |
-| `app/stats/page.js` | Public EHB stats (WiseOldMan) with team filter |
+| `app/stats/page.js` | Public event stats (EHB, bosses, activities) with team filter |
 
 ### Components
 | File | Purpose |
@@ -103,6 +105,7 @@ The application is fully functional and deployed on Vercel.
 | `components/RulesModal.jsx` | Game rules popup |
 | `components/EhbBarChart.jsx` | Horizontal CSS bar chart (+ `formatEhb`) |
 | `components/EhbTable.jsx` | Player EHB table |
+| `components/TeamMetricTable.jsx` | Bosses/activities table with teams as columns |
 
 ### API Routes
 | Route | Methods | Purpose |
@@ -113,7 +116,7 @@ The application is fully functional and deployed on Vercel.
 | `/api/admin/auth` | POST | Verify admin password |
 | `/api/admin/settings` | GET, PATCH | Manage app settings (Discord webhook) |
 | `/api/admin/tiles/reset` | POST | Reset all tiles of a board (incl. submissions, progress, screenshots) |
-| `/api/stats/ehb` | GET | Public cached EHB stats from WiseOldMan |
+| `/api/stats` | GET | Public cached EHB, boss and activity stats from WiseOldMan |
 | `/api/admin/stats/refresh` | POST | Force a refresh of the WiseOldMan cache |
 
 ### Libraries
@@ -121,7 +124,8 @@ The application is fully functional and deployed on Vercel.
 |------|---------|
 | `lib/supabase.js` | Supabase client initialization |
 | `lib/tiles.js` | Default tile generation (`buildMissingTiles`) |
-| `lib/wiseoldman.js` | WiseOldMan API client + normalization (`fetchCompetitionMetric`) |
+| `lib/wiseoldman.js` | WiseOldMan API client + normalization (`fetchCompetition`) |
+| `lib/statsMetrics.js` | Boss/activity metric lists, display names, `buildMetricRows` |
 | `lib/womStats.js` | `wom_cache` handling with 15-min lazy refresh (`getCompetitionStats`) |
 
 ## Environment Variables
@@ -205,3 +209,5 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 
 ### October 2026
 - Added EHB stats page (`/stats`) with WiseOldMan integration, DB cache (`wom_cache`) and team filter (see `docs/features/wom-ehb-stats.md`)
+- Fixed "No competition configured" caused by the Next.js fetch cache (Supabase client in `lib/womStats.js` now uses `cache: 'no-store'`)
+- Added Bosses and Activities tabs per team to `/stats`; `/api/stats/ehb` renamed to `/api/stats`

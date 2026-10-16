@@ -114,7 +114,7 @@ export default function Home() {
           OSRS Clan Event
         </p>
         <a href="/stats" style={{ color: '#ffd700', fontSize: '0.9rem', textDecoration: 'none' }}>
-          📊 View EHB stats
+          📊 View event stats
         </a>
       </header>
 

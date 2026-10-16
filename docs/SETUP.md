@@ -112,7 +112,7 @@ VALUES
 ```sql
 CREATE TABLE wom_cache (
   competition_id INTEGER NOT NULL,
-  metric TEXT NOT NULL DEFAULT 'ehb',
+  metric TEXT NOT NULL DEFAULT 'all',
   data JSONB NOT NULL,
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (competition_id, metric)

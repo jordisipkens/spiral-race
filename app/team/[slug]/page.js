@@ -371,7 +371,7 @@ export default function TeamPage() {
               textTransform: 'uppercase'
             }}
           >
-            📊 EHB Stats
+            📊 Stats
           </a>
         </div>
         {saving && (

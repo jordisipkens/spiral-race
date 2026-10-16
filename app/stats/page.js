@@ -4,8 +4,15 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import EhbBarChart, { formatEhb } from '../../components/EhbBarChart'
 import EhbTable from '../../components/EhbTable'
+import TeamMetricTable from '../../components/TeamMetricTable'
+import { BOSS_METRICS, ACTIVITY_METRICS, buildMetricRows } from '../../lib/statsMetrics'
 
 const ALL = '__all__'
+const VIEWS = [
+  { id: 'ehb', label: '⏱️ EHB' },
+  { id: 'bosses', label: '💀 Bosses' },
+  { id: 'activities', label: '📜 Activities' }
+]
 
 function formatPeriod(competition) {
   const options = { day: 'numeric', month: 'short', year: 'numeric' }
@@ -20,6 +27,7 @@ function StatsContent() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTeam, setActiveTeam] = useState(searchParams.get('team') || ALL)
+  const [activeView, setActiveView] = useState('ehb')
 
   useEffect(() => {
     loadStats()
@@ -36,7 +44,7 @@ function StatsContent() {
 
   async function loadStats() {
     try {
-      const res = await fetch('/api/stats/ehb')
+      const res = await fetch('/api/stats')
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || 'Failed to load stats')
@@ -77,6 +85,8 @@ function StatsContent() {
     ? players
     : players.filter(player => player.teamName === selectedTeam)
   const totalGained = visiblePlayers.reduce((sum, player) => sum + player.gained, 0)
+  // Team columns only in the "All players" view of a team competition
+  const teamNames = selectedTeam === ALL ? teams.map(team => team.name) : []
 
   return (
     <main style={{ minHeight: '100vh', padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
@@ -90,7 +100,7 @@ function StatsContent() {
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          EHB Stats
+          Event Stats
         </h1>
         <p style={{ color: '#a0a0a0', marginBottom: '0.25rem' }}>{competition.title}</p>
         <p style={{ color: '#666', fontSize: '0.85rem' }}>
@@ -99,6 +109,26 @@ function StatsContent() {
           {stats.stale && ' (WiseOldMan unreachable, showing cached data)'}
         </p>
       </header>
+
+      {/* View tabs */}
+      <div style={styles.filters}>
+        {VIEWS.map(view => {
+          const isActive = activeView === view.id
+          return (
+            <button
+              key={view.id}
+              onClick={() => setActiveView(view.id)}
+              style={{
+                ...styles.viewBtn,
+                background: isActive ? 'linear-gradient(135deg, #ffd700 0%, #ff8c00 100%)' : 'rgba(255, 215, 0, 0.1)',
+                color: isActive ? '#1a1a2e' : '#ffd700'
+              }}
+            >
+              {view.label}
+            </button>
+          )
+        })}
+      </div>
 
       {/* Team filter */}
       {teams.length > 0 && (
@@ -119,15 +149,41 @@ function StatsContent() {
                 }}
               >
                 <span>{team.label}</span>
-                <span style={{ fontSize: '0.8rem', color: '#ffd700' }}>{formatEhb(team.totalGained)} EHB</span>
+                {activeView === 'ehb' && (
+                  <span style={{ fontSize: '0.8rem', color: '#ffd700' }}>{formatEhb(team.totalGained)} EHB</span>
+                )}
               </button>
             )
           })}
         </div>
       )}
 
+      {/* Bosses */}
+      {activeView === 'bosses' && (
+        <section style={styles.card}>
+          <h2 style={styles.cardTitle}>Boss kills during the event</h2>
+          <TeamMetricTable
+            rows={buildMetricRows(visiblePlayers, BOSS_METRICS)}
+            teamNames={teamNames}
+            emptyText="No boss kills yet"
+          />
+        </section>
+      )}
+
+      {/* Activities */}
+      {activeView === 'activities' && (
+        <section style={styles.card}>
+          <h2 style={styles.cardTitle}>Activities during the event</h2>
+          <TeamMetricTable
+            rows={buildMetricRows(visiblePlayers, ACTIVITY_METRICS, { sortByTotal: false })}
+            teamNames={teamNames}
+            emptyText="No activity gains yet"
+          />
+        </section>
+      )}
+
       {/* Team totals (only in "All players" view) */}
-      {selectedTeam === ALL && teams.length > 0 && (
+      {activeView === 'ehb' && selectedTeam === ALL && teams.length > 0 && (
         <section style={styles.card}>
           <h2 style={styles.cardTitle}>EHB gained per team</h2>
           <EhbBarChart
@@ -141,23 +197,27 @@ function StatsContent() {
       )}
 
       {/* Player chart */}
-      <section style={styles.card}>
-        <h2 style={styles.cardTitle}>
-          EHB gained per player
-          <span style={{ color: '#888', fontSize: '0.9rem', fontWeight: 'normal', marginLeft: '0.5rem' }}>
-            ({visiblePlayers.length} players · {formatEhb(totalGained)} total)
-          </span>
-        </h2>
-        <EhbBarChart
-          items={visiblePlayers.map(player => ({ label: player.displayName, value: player.gained }))}
-        />
-      </section>
+      {activeView === 'ehb' && (
+        <section style={styles.card}>
+          <h2 style={styles.cardTitle}>
+            EHB gained per player
+            <span style={{ color: '#888', fontSize: '0.9rem', fontWeight: 'normal', marginLeft: '0.5rem' }}>
+              ({visiblePlayers.length} players · {formatEhb(totalGained)} total)
+            </span>
+          </h2>
+          <EhbBarChart
+            items={visiblePlayers.map(player => ({ label: player.displayName, value: player.gained }))}
+          />
+        </section>
+      )}
 
       {/* Player table */}
-      <section style={styles.card}>
-        <h2 style={styles.cardTitle}>All participants</h2>
-        <EhbTable players={visiblePlayers} showTeam={selectedTeam === ALL && teams.length > 0} />
-      </section>
+      {activeView === 'ehb' && (
+        <section style={styles.card}>
+          <h2 style={styles.cardTitle}>All participants</h2>
+          <EhbTable players={visiblePlayers} showTeam={selectedTeam === ALL && teams.length > 0} />
+        </section>
+      )}
     </main>
   )
 }
@@ -193,6 +253,15 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     gap: '0.25rem'
+  },
+  viewBtn: {
+    border: '2px solid rgba(255, 215, 0, 0.5)',
+    padding: '0.6rem 1.25rem',
+    fontSize: '1rem',
+    fontWeight: 'bold',
+    borderRadius: '20px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
   },
   card: {
     background: 'rgba(0, 0, 0, 0.3)',

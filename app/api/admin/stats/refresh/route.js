@@ -14,7 +14,7 @@ export async function POST(request) {
   }
 
   try {
-    const stats = await getCompetitionStats({ metric: 'ehb', force: true })
+    const stats = await getCompetitionStats({ force: true })
     if (stats.stale) {
       return NextResponse.json(
         { error: 'WiseOldMan could not be reached, showing cached data', ...stats },

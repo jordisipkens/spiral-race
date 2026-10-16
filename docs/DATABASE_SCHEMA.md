@@ -175,7 +175,7 @@ CREATE INDEX idx_settings_key ON settings(key);
 ```sql
 CREATE TABLE wom_cache (
   competition_id INTEGER NOT NULL,
-  metric TEXT NOT NULL DEFAULT 'ehb',
+  metric TEXT NOT NULL DEFAULT 'all',
   data JSONB NOT NULL,
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (competition_id, metric)
@@ -188,8 +188,8 @@ ALTER TABLE wom_cache ENABLE ROW LEVEL SECURITY;
 | Column | Type | Description |
 |--------|------|-------------|
 | competition_id | INTEGER | WOM competition ID (part of primary key) |
-| metric | TEXT | WOM metric, currently `'ehb'` (part of primary key) |
-| data | JSONB | `{ competition, metric, teams, players }` from `lib/wiseoldman.js` |
+| metric | TEXT | Dataset key, currently `'all'` (EHB + bosses + activities); part of primary key |
+| data | JSONB | `{ competition, teams, players }` from `lib/wiseoldman.js`; players hold EHB values and non-zero boss/activity `gains` |
 | fetched_at | TIMESTAMPTZ | Last fetch from WOM; also used as refresh lock |
 
 **Access**: Server-side only (service role) via `lib/womStats.js`. `TIMESTAMPTZ` is used (unlike the other tables) so browsers parse the time correctly.

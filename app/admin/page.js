@@ -1243,7 +1243,7 @@ export default function AdminPage() {
           <div style={styles.addTeamForm}>
             <h3 style={{ color: '#fff', marginBottom: '1rem' }}>WiseOldMan Competition</h3>
             <p style={{ color: '#aaa', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              Used for the EHB stats page (<a href="/stats" target="_blank" style={{ color: '#ffd700' }}>/stats</a>).
+              Used for the stats page (<a href="/stats" target="_blank" style={{ color: '#ffd700' }}>/stats</a>).
               Data is cached and refreshed from WiseOldMan at most every 15 minutes.
             </p>
 
