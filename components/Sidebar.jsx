@@ -42,16 +42,20 @@ export default function Sidebar() {
     }
   }
 
-  async function logout() {
-    await Promise.all([
-      session.admin && fetch('/api/admin/auth', { method: 'DELETE' }),
-      ...session.teams.map(slug => fetch(`/api/team/auth?slug=${encodeURIComponent(slug)}`, { method: 'DELETE' }))
-    ])
+  // Admin and team sessions are separate, so they have separate log out buttons
+  async function logoutAdmin() {
+    await fetch('/api/admin/auth', { method: 'DELETE' })
+    window.location.href = '/'
+  }
+
+  async function logoutTeams() {
+    await Promise.all(
+      session.teams.map(slug => fetch(`/api/team/auth?slug=${encodeURIComponent(slug)}`, { method: 'DELETE' }))
+    )
     window.location.href = '/'
   }
 
   const activeAdminSection = pathname === '/admin' ? (searchParams.get('section') || 'tiles') : null
-  const isLoggedIn = session.admin || session.teams.length > 0
 
   return (
     <>
@@ -69,7 +73,7 @@ export default function Sidebar() {
         <div style={styles.heading}>Teams</div>
         {teams.length === 0 && <div style={styles.empty}>No teams yet</div>}
         {teams.map(team => {
-          const unlocked = session.admin || session.teams.includes(team.slug)
+          const unlocked = session.teams.includes(team.slug)
           return (
             <NavItem
               key={team.id}
@@ -92,9 +96,14 @@ export default function Sidebar() {
           />
         ))}
 
-        {isLoggedIn && (
-          <button onClick={logout} style={styles.logout}>
-            Log out{session.admin ? ' (admin)' : ''}
+        {session.teams.length > 0 && (
+          <button onClick={logoutTeams} style={styles.logout}>
+            Log out team{session.teams.length > 1 ? 's' : ''}
+          </button>
+        )}
+        {session.admin && (
+          <button onClick={logoutAdmin} style={styles.logout}>
+            Log out admin
           </button>
         )}
       </nav>
@@ -152,7 +161,9 @@ const styles = {
     padding: '0.4rem 1rem'
   },
   logout: {
-    margin: '1.5rem 1rem 0',
+    display: 'block',
+    width: 'calc(100% - 2rem)',
+    margin: '1rem 1rem 0',
     padding: '0.5rem',
     background: 'transparent',
     border: '1px solid rgba(231, 76, 60, 0.6)',

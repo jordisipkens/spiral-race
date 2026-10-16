@@ -21,6 +21,7 @@ The application is fully functional and deployed on Vercel.
 - [x] Team pages protected with a password per team, session valid for 7 days (see `docs/features/team-authentication.md`)
 - [x] Admin login with HMAC-signed cookie; middleware guards `/team/[slug]`, `/api/admin/*` and `/api/submissions/*`
 - [x] Submission routes check that the `team_id` belongs to the logged-in team
+- [x] Admin and team sessions are separate: admin has no access to team pages or `/api/submissions`, and only approves/rejects via `/api/admin/submissions`
 
 ### Evidence Submission System
 - [x] Image upload to Supabase Storage
@@ -238,3 +239,4 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 - Added Bosses and Activities tabs per team to `/stats`; `/api/stats/ehb` renamed to `/api/stats`
 - Added navigation sidebar and per-team passwords (7-day sessions); admin login now uses a signed cookie
 - Homepage demo board now respects the show/hide locked tiles setting
+- Admin session no longer grants team page or team submission access (separate cookies); admin only approves/rejects

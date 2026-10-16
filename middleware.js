@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { isAdminRequest, hasTeamAccess, getTeamSessions } from './lib/auth'
 
 // Gatekeeper for password-protected pages and API routes:
-// - /team/[slug]       -> valid team session for that slug (or admin), else redirect to its login page
+// - /team/[slug]       -> valid team session for that slug, else redirect to its login page
 // - /api/admin/*       -> admin session (except the login endpoint itself)
-// - /api/submissions/* -> any team session (or admin); routes check the team_id themselves
+// - /api/submissions/* -> any team session; routes check the team_id themselves.
+//                         Admins review via /api/admin/submissions instead.
+// Admin and team sessions are separate: the admin cookie never grants team access.
 export async function middleware(request) {
   const { pathname } = request.nextUrl
 
@@ -24,7 +26,6 @@ export async function middleware(request) {
   }
 
   if (pathname.startsWith('/api/submissions')) {
-    if (await isAdminRequest(request)) return NextResponse.next()
     if ((await getTeamSessions(request)).length > 0) return NextResponse.next()
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

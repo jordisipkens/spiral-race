@@ -29,8 +29,8 @@ As a participant or admin, I want one menu that links to every page, so that I c
 ### Data Flow
 1. On mount the sidebar loads the teams (`id, name, slug`) with the anon Supabase client.
 2. On every navigation it calls `GET /api/session` → `{ admin, teams: [slug] }`. The session cookies are httpOnly, so the client can't read them itself.
-3. Teams with a valid session (or every team for admins) show 🔓, the others 🔒. Clicking a locked team goes to the page; the middleware redirects to its login page.
-4. **Log out** clears the admin cookie and every team cookie, then goes to `/`.
+3. Teams with a valid team session show 🔓, the others 🔒 (an admin session does not unlock teams). Clicking a locked team goes to the page; the middleware redirects to its login page.
+4. Separate buttons: **Log out team(s)** clears the team cookies, **Log out admin** clears the admin cookie.
 
 ### Responsive behaviour
 - Desktop (> 900px): fixed sidebar of 240px; page content gets `margin-left: 240px`.

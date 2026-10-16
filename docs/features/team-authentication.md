@@ -47,9 +47,19 @@ All are `httpOnly`, `secure` in production, `sameSite: 'lax'` so links from Disc
 1. A visitor opens `/team/dragons`. The middleware finds no valid `team_dragons` cookie and redirects to `/team/dragons/login`.
 2. The login form calls `POST /api/team/auth { slug, password }`, which verifies the scrypt hash from `team_passwords`.
 3. On success the server sets `team_dragons` (7 days) and the page does a full navigation to `/team/dragons`.
-4. Submissions: the middleware requires a session, and `POST /api/submissions` and `/upload` check with `canActForTeam` that the `team_id` belongs to that session (or that the user is admin).
+4. Submissions: the middleware requires a team session, and `POST /api/submissions` and `/upload` check with `canActForTeam` that the `team_id` belongs to that session.
 
-Admins have access to every team page.
+### Admin vs team access
+Admin and team logins are completely separate (different passwords and cookies):
+
+| Action | Admin session | Team session |
+|--------|---------------|--------------|
+| `/team/[slug]` page | ❌ (redirect to team login) | ✅ own team only |
+| Submit evidence (`POST /api/submissions`, `/upload`) | ❌ | ✅ own team only |
+| Team submissions (`GET /api/submissions?team_id=`) | ❌ | ✅ own team only |
+| Approve/reject submissions (`/api/admin/submissions`) and other admin APIs | ✅ | ❌ |
+
+An admin who wants to view a team page logs in with that team's password; both sessions can exist side by side.
 
 ### Database Interaction
 - **Tables Used**: `teams`, `team_passwords`
@@ -70,6 +80,10 @@ Admins have access to every team page.
 ### Separate `team_passwords` table
 - **Rationale**: The `teams` table is read with the public anon key (team pages, sidebar). A hash column there would be readable by anyone. A separate table with RLS and no policies is only reachable with the service role.
 
+### Separate admin and team sessions
+- **Rationale**: The admin password is for managing the event, not for playing as a team. Keeping them separate prevents an admin session from accidentally submitting for a team.
+- **Trade-offs**: An admin needs the team password to view a team page. Admins only approve or reject submissions, through `/api/admin/submissions`; everything under `/api/submissions` belongs to the team.
+
 ### Team without a password is locked
 - **Rationale**: Safe by default. The admin sees "⚠️ No password" per team and sets one in the Teams tab.
 
@@ -80,7 +94,8 @@ Admins have access to every team page.
 ## Testing Considerations
 - [x] Forged `admin_token` cookie → 401 on `/api/admin/*`
 - [x] Tampered, expired or other-secret tokens are rejected
-- [x] `/team/[slug]` without a session → redirect to `/team/[slug]/login`; as admin → 200
+- [x] `/team/[slug]` without a session → redirect to `/team/[slug]/login`; with only an admin session → also redirect
+- [x] Admin: `GET`/`POST /api/submissions` 401, `/api/admin/*` 200
 - [x] `/api/submissions` without a session → 401
 - [ ] Team login with a real password (needs the `team_passwords` table)
 - [ ] Team A session can't submit with team B's `team_id` (403)
