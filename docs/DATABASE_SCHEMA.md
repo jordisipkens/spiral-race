@@ -8,6 +8,7 @@ Supabase PostgreSQL database with 5 main tables:
 - `progress` - Completed tiles per team
 - `submissions` - Evidence uploads with approval workflow
 - `settings` - App configuration (Discord webhook, etc.)
+- `wom_cache` - Cached WiseOldMan competition data for the stats page
 
 ## Tables
 
@@ -162,6 +163,36 @@ CREATE INDEX idx_settings_key ON settings(key);
 
 **Current settings**:
 - `discord_webhook_url` - Discord webhook URL for notifications
+- `show_locked_tiles` - `'true'`/`'false'`, show locked tiles to teams
+- `wom_competition_id` - WiseOldMan competition ID used by `/stats`
+
+---
+
+### wom_cache
+
+**Purpose**: Cache of the normalized WiseOldMan competition data, so WOM is called at most once per 15 minutes (see [features/wom-ehb-stats.md](./features/wom-ehb-stats.md)).
+
+```sql
+CREATE TABLE wom_cache (
+  competition_id INTEGER NOT NULL,
+  metric TEXT NOT NULL DEFAULT 'ehb',
+  data JSONB NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (competition_id, metric)
+);
+
+-- Only accessed server-side with the service role key
+ALTER TABLE wom_cache ENABLE ROW LEVEL SECURITY;
+```
+
+| Column | Type | Description |
+|--------|------|-------------|
+| competition_id | INTEGER | WOM competition ID (part of primary key) |
+| metric | TEXT | WOM metric, currently `'ehb'` (part of primary key) |
+| data | JSONB | `{ competition, metric, teams, players }` from `lib/wiseoldman.js` |
+| fetched_at | TIMESTAMPTZ | Last fetch from WOM; also used as refresh lock |
+
+**Access**: Server-side only (service role) via `lib/womStats.js`. `TIMESTAMPTZ` is used (unlike the other tables) so browsers parse the time correctly.
 
 ---
 

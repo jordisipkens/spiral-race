@@ -48,6 +48,14 @@ The application is fully functional and deployed on Vercel.
 - [x] Approval notification sent to team webhook when submission is approved
 - [x] Ring unlock notification sent to team webhook when a ring is completed
 
+### EHB Stats (WiseOldMan)
+- [x] Public `/stats` page with EHB gained per player during the event (bar chart + table)
+- [x] Team filter ("All players" + one button per WOM team) and team totals chart
+- [x] Data from a WiseOldMan competition, cached in `wom_cache` and refreshed at most every 15 minutes (lazy refresh)
+- [x] Admin Settings: competition ID + "Refresh now"
+- [x] "EHB Stats" button on team pages links to `/stats?team=<team name>`
+- See `docs/features/wom-ehb-stats.md`
+
 ### Visual Indicators
 - [x] Pending submissions show yellow border + clock icon
 - [x] Locked tiles at 25% opacity showing tile titles (ring not yet available)
@@ -57,6 +65,7 @@ The application is fully functional and deployed on Vercel.
 ### Admin Settings
 - [x] Global Discord webhook URL configurable
 - [x] Show/hide locked tiles toggle — when OFF, locked tiles are completely hidden; when ON, tiles show their actual titles (no lock icon)
+- [x] WiseOldMan competition ID for the EHB stats page
 
 ### User Experience
 - [x] Rules modal popup with game explanation (English)
@@ -82,6 +91,7 @@ The application is fully functional and deployed on Vercel.
 | `app/page.js` | Homepage (demo board) |
 | `app/team/[slug]/page.js` | Team board view with submissions |
 | `app/admin/page.js` | Admin panel for tiles, teams, submissions |
+| `app/stats/page.js` | Public EHB stats (WiseOldMan) with team filter |
 
 ### Components
 | File | Purpose |
@@ -91,6 +101,8 @@ The application is fully functional and deployed on Vercel.
 | `components/BoardTabs.jsx` | Easy/Medium/Hard tab navigation |
 | `components/SubmissionCard.jsx` | Submission display for admin |
 | `components/RulesModal.jsx` | Game rules popup |
+| `components/EhbBarChart.jsx` | Horizontal CSS bar chart (+ `formatEhb`) |
+| `components/EhbTable.jsx` | Player EHB table |
 
 ### API Routes
 | Route | Methods | Purpose |
@@ -101,12 +113,16 @@ The application is fully functional and deployed on Vercel.
 | `/api/admin/auth` | POST | Verify admin password |
 | `/api/admin/settings` | GET, PATCH | Manage app settings (Discord webhook) |
 | `/api/admin/tiles/reset` | POST | Reset all tiles of a board (incl. submissions, progress, screenshots) |
+| `/api/stats/ehb` | GET | Public cached EHB stats from WiseOldMan |
+| `/api/admin/stats/refresh` | POST | Force a refresh of the WiseOldMan cache |
 
 ### Libraries
 | File | Purpose |
 |------|---------|
 | `lib/supabase.js` | Supabase client initialization |
 | `lib/tiles.js` | Default tile generation (`buildMissingTiles`) |
+| `lib/wiseoldman.js` | WiseOldMan API client + normalization (`fetchCompetitionMetric`) |
+| `lib/womStats.js` | `wom_cache` handling with 15-min lazy refresh (`getCompetitionStats`) |
 
 ## Environment Variables
 
@@ -117,6 +133,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ADMIN_PASSWORD=your-password
+WOM_API_KEY=optional-wiseoldman-api-key
 ```
 
 ## Database Tables
@@ -125,7 +142,8 @@ ADMIN_PASSWORD=your-password
 2. **tiles** - Challenge configuration per position
 3. **progress** - Completed tiles per team
 4. **submissions** - Evidence uploads with status
-5. **settings** - App configuration (Discord webhook URL)
+5. **settings** - App configuration (Discord webhook URL, WOM competition ID)
+6. **wom_cache** - Cached WiseOldMan competition data for `/stats`
 
 See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for full details.
 
@@ -148,6 +166,13 @@ Polling is simpler to implement and sufficient for the use case. Team pages refr
 
 ### Why reset tiles by delete + regenerate?
 Resetting a board is meant for starting a new event, so old submissions, screenshots and progress must go too. Deleting the tiles removes submissions and progress via `ON DELETE CASCADE`; screenshots are deleted from storage by a server-side API route (service role key). It is per board and behind a confirmation dialog to limit mistakes.
+
+### Why cache WiseOldMan data in the database?
+- **Date**: October 2026
+- **Decision**: Visitors read EHB stats from the `wom_cache` table. A request refreshes the cache from WOM only when it is older than 15 minutes, and a conditional update makes sure only one request does the refresh.
+- **Rationale**: The load on WOM does not depend on the number of visitors (rate limit is about 20 req/min without a key). Vercel Hobby cron jobs can only run once per day, so lazy refresh works on any plan.
+- **Alternatives Considered**: Vercel Cron, Next.js fetch cache (not shared between serverless instances), calling WOM from the browser.
+- **Trade-offs**: The first visitor after the TTL waits for one WOM call.
 
 ### Why inline styles?
 Keeps component code self-contained and makes it easy to copy/modify without managing separate CSS files.
@@ -175,3 +200,8 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 2. Vercel auto-deploys from main branch
 3. Environment variables must be set in Vercel dashboard
 4. Supabase Storage bucket `proof-images` must exist and be public
+
+## Recent Changes
+
+### October 2026
+- Added EHB stats page (`/stats`) with WiseOldMan integration, DB cache (`wom_cache`) and team filter (see `docs/features/wom-ehb-stats.md`)

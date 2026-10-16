@@ -24,6 +24,8 @@ spiral-race-project/
 │   ├── layout.js                  # Root layout
 │   ├── admin/
 │   │   └── page.js                # Admin panel (tiles, teams, submissions)
+│   ├── stats/
+│   │   └── page.js                # EHB stats (WiseOldMan)
 │   ├── team/
 │   │   └── [slug]/
 │       └── page.js                # Team board page
@@ -62,6 +64,7 @@ spiral-race-project/
 - Full-screen image viewer for uploaded evidence
 - Rules popup explaining game mechanics
 - Auto-refresh every 3 minutes for progress updates
+- EHB stats page (`/stats`): EHB gained per player during the event from a WiseOldMan competition, with a filter per team
 
 ### Admin Features
 - Password-protected admin panel
@@ -73,6 +76,7 @@ spiral-race-project/
 - View related approved submissions for multi-item tiles
 - Approve/reject submissions with optional rejection reason
 - Auto-refresh every 1 minute for new submissions
+- Configure the WiseOldMan competition ID for the stats page (cached, refreshed at most every 15 minutes)
 
 ### Visual States
 - **Locked**: Opacity 0.25 - ring not yet available
@@ -96,6 +100,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ADMIN_PASSWORD=your-admin-password
+WOM_API_KEY=optional-wiseoldman-api-key
 ```
 
 ### Database Setup
@@ -152,6 +157,16 @@ CREATE TABLE submissions (
 CREATE INDEX idx_submissions_status ON submissions(status);
 CREATE INDEX idx_submissions_team_tile ON submissions(team_id, tile_id);
 CREATE INDEX idx_progress_team ON progress(team_id);
+
+-- WiseOldMan cache (for /stats)
+CREATE TABLE wom_cache (
+  competition_id INTEGER NOT NULL,
+  metric TEXT NOT NULL DEFAULT 'ehb',
+  data JSONB NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (competition_id, metric)
+);
+ALTER TABLE wom_cache ENABLE ROW LEVEL SECURITY;
 ```
 
 ### Storage Setup
@@ -212,6 +227,12 @@ Approve or reject a submission.
 
 ### POST /api/admin/auth
 Verify admin password.
+
+### GET /api/stats/ehb
+Cached EHB stats for the configured WiseOldMan competition (refreshed from WOM at most every 15 minutes).
+
+### POST /api/admin/stats/refresh
+Force a refresh of the WiseOldMan cache (admin only).
 
 ## Contributing
 

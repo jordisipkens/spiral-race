@@ -41,6 +41,10 @@ export default function AdminPage() {
   const [savingSettings, setSavingSettings] = useState(false)
   const [testingWebhook, setTestingWebhook] = useState(false)
   const [showLockedTiles, setShowLockedTiles] = useState(true)
+  const [womCompetitionId, setWomCompetitionId] = useState('')
+  const [savingWom, setSavingWom] = useState(false)
+  const [refreshingWom, setRefreshingWom] = useState(false)
+  const [womInfo, setWomInfo] = useState(null) // { title, participants, fetchedAt }
 
   // Check auth on mount
   useEffect(() => {
@@ -131,6 +135,7 @@ export default function AdminPage() {
         const data = await res.json()
         setWebhookUrl(data.settings?.discord_webhook_url || '')
         setShowLockedTiles(data.settings?.show_locked_tiles !== 'false')
+        setWomCompetitionId(data.settings?.wom_competition_id || '')
       }
     } catch (error) {
       console.error('Error loading settings:', error)
@@ -166,6 +171,54 @@ export default function AdminPage() {
       setMessage({ type: 'error', text: 'Failed to save webhook' })
     }
     setSavingSettings(false)
+  }
+
+  async function saveWomCompetitionId() {
+    const id = womCompetitionId.trim()
+    if (id && !/^\d+$/.test(id)) {
+      setMessage({ type: 'error', text: 'Competition ID must be a number' })
+      return
+    }
+    setSavingWom(true)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'wom_competition_id', value: id || null })
+      })
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'WiseOldMan competition saved!' })
+        setWomInfo(null)
+        if (id) await refreshWomStats()
+      } else {
+        setMessage({ type: 'error', text: 'Failed to save competition ID' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to save competition ID' })
+    }
+    setSavingWom(false)
+  }
+
+  // Force-fetch fresh data from WiseOldMan into the cache
+  async function refreshWomStats() {
+    setRefreshingWom(true)
+    try {
+      const res = await fetch('/api/admin/stats/refresh', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setWomInfo({
+          title: data.competition.title,
+          participants: data.players.length,
+          fetchedAt: data.fetchedAt
+        })
+        setMessage({ type: 'success', text: `Loaded ${data.players.length} participants from WiseOldMan` })
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to refresh WiseOldMan data' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to refresh WiseOldMan data' })
+    }
+    setRefreshingWom(false)
   }
 
   async function testWebhook() {
@@ -1184,6 +1237,56 @@ export default function AdminPage() {
                 {showLockedTiles ? 'ON' : 'OFF'}
               </button>
             </div>
+          </div>
+
+          {/* WiseOldMan Competition */}
+          <div style={styles.addTeamForm}>
+            <h3 style={{ color: '#fff', marginBottom: '1rem' }}>WiseOldMan Competition</h3>
+            <p style={{ color: '#aaa', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Used for the EHB stats page (<a href="/stats" target="_blank" style={{ color: '#ffd700' }}>/stats</a>).
+              Data is cached and refreshed from WiseOldMan at most every 15 minutes.
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={womCompetitionId}
+                onChange={e => setWomCompetitionId(e.target.value)}
+                placeholder="Competition ID, e.g. 12345"
+                style={{ ...styles.input, flex: 1, minWidth: '200px' }}
+              />
+              <button
+                onClick={saveWomCompetitionId}
+                disabled={savingWom}
+                style={{ ...styles.saveBtn, opacity: savingWom ? 0.5 : 1 }}
+              >
+                {savingWom ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={refreshWomStats}
+                disabled={refreshingWom || !womCompetitionId.trim()}
+                style={{
+                  ...styles.editBtn,
+                  background: '#9b59b6',
+                  opacity: (refreshingWom || !womCompetitionId.trim()) ? 0.5 : 1
+                }}
+              >
+                {refreshingWom ? 'Refreshing...' : 'Refresh now'}
+              </button>
+            </div>
+
+            <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+              The ID is in the competition URL: wiseoldman.net/competitions/<strong>12345</strong>.
+              Use a team competition with the same team names as in this app to enable team filters.
+            </p>
+
+            {womInfo && (
+              <p style={{ color: '#2ecc71', fontSize: '0.9rem', marginTop: '0.75rem' }}>
+                ✓ {womInfo.title} · {womInfo.participants} participants · fetched{' '}
+                {new Date(womInfo.fetchedAt).toLocaleTimeString()}
+              </p>
+            )}
           </div>
         </>
       )}

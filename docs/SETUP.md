@@ -107,6 +107,21 @@ VALUES
   ('hard', 0, 0, 'Hard Center', 500, true);
 ```
 
+### WiseOldMan Stats Cache (optional, for `/stats`)
+
+```sql
+CREATE TABLE wom_cache (
+  competition_id INTEGER NOT NULL,
+  metric TEXT NOT NULL DEFAULT 'ehb',
+  data JSONB NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (competition_id, metric)
+);
+
+-- Only accessed server-side with the service role key
+ALTER TABLE wom_cache ENABLE ROW LEVEL SECURITY;
+```
+
 ### Create Storage Bucket
 
 1. Go to Supabase Dashboard > Storage
@@ -122,6 +137,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ADMIN_PASSWORD=choose-a-secure-password
+# Optional: WiseOldMan API key for a higher rate limit
+WOM_API_KEY=
 ```
 
 Find credentials in Supabase Dashboard > Settings > API

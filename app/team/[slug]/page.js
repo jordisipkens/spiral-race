@@ -355,6 +355,24 @@ export default function TeamPage() {
           >
             Rules
           </button>
+          <a
+            href={`/stats?team=${encodeURIComponent(team.name)}`}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 140, 0, 0.2) 100%)',
+              border: '2px solid rgba(255, 215, 0, 0.5)',
+              borderRadius: '12px',
+              color: '#ffd700',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              textDecoration: 'none',
+              boxShadow: '0 0 15px rgba(255, 215, 0, 0.15)',
+              letterSpacing: '1px',
+              textTransform: 'uppercase'
+            }}
+          >
+            📊 EHB Stats
+          </a>
         </div>
         {saving && (
           <p style={{ color: '#3498db', fontSize: '0.9rem', marginTop: '0.5rem' }}>

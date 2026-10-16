@@ -113,6 +113,9 @@ export default function Home() {
         <p style={{ color: '#a0a0a0' }}>
           OSRS Clan Event
         </p>
+        <a href="/stats" style={{ color: '#ffd700', fontSize: '0.9rem', textDecoration: 'none' }}>
+          📊 View EHB stats
+        </a>
       </header>
 
       {/* Board Tabs */}
