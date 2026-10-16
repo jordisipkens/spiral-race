@@ -41,6 +41,9 @@ As a participant, I want to see how much EHB every player and team has gained du
    - **Stale**: the route "claims" the refresh with a conditional update (`fetched_at = now() WHERE fetched_at < threshold`). Only the request whose update matched a row calls WOM; concurrent requests get the existing cache.
 4. If WOM fails while a cache exists, the old data is returned with `stale: true` and `fetched_at` is set so that a retry happens after about 1 minute. Without any cache, the route returns `502`.
 
+### Next.js fetch cache
+The Supabase client in `lib/womStats.js` passes `cache: 'no-store'` to every fetch. Without it, Next.js 14 stores Supabase responses in its fetch cache (the Vercel Data Cache, which survives deployments), even with `dynamic = 'force-dynamic'`. An empty `wom_competition_id` result then stayed cached and the API kept returning "No competition configured".
+
 ### State Management
 Local React state on the stats page. The selected team is preselected from `?team=<name>`; the team pages link there with their own name. If the name is not a WOM team, the page falls back to "All players".
 
