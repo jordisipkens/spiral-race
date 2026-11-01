@@ -239,4 +239,5 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 - Added Bosses and Activities tabs per team to `/stats`; `/api/stats/ehb` renamed to `/api/stats`
 - Added navigation sidebar and per-team passwords (7-day sessions); admin login now uses a signed cookie
 - Homepage demo board now respects the show/hide locked tiles setting
+- Renamed the app to "Pragmatic's Spiral into Madness"; removed the homepage subtitle and stats link (now in the sidebar)
 - Admin session no longer grants team page or team submission access (separate cookies); admin only approves/rejects

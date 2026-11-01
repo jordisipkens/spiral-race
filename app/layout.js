@@ -3,7 +3,7 @@ import './globals.css'
 import Sidebar from '../components/Sidebar'
 
 export const metadata = {
-  title: 'Spiral Race - OSRS Clan Event',
+  title: "Pragmatic's Spiral into Madness",
   description: 'Progressive spiral-based event platform voor OSRS clan competitions',
 }
 

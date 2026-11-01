@@ -65,7 +65,7 @@ export default function Sidebar() {
       {open && <div className="sidebar-backdrop" onClick={() => setOpen(false)} />}
 
       <nav className={`sidebar${open ? ' open' : ''}`}>
-        <Link href="/" style={styles.brand}>Spiral Race</Link>
+        <Link href="/" style={styles.brand}>{"Pragmatic's Spiral into Madness"}</Link>
 
         <NavItem href="/" icon="🏠" label="Home" active={pathname === '/'} />
         <NavItem href="/stats" icon="📊" label="Stats" active={pathname === '/stats'} />
@@ -131,8 +131,9 @@ function NavItem({ href, icon, label, active }) {
 const styles = {
   brand: {
     display: 'block',
-    fontSize: '1.4rem',
+    fontSize: '1.2rem',
     fontWeight: 'bold',
+    lineHeight: 1.3,
     padding: '0 1rem 1.25rem',
     background: 'linear-gradient(90deg, #ffd700, #ff8c00)',
     WebkitBackgroundClip: 'text',

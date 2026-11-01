@@ -317,7 +317,7 @@ export default function TeamPage() {
           {team.name}
         </h1>
         <p style={{ color: '#a0a0a0', marginBottom: '0.5rem' }}>
-          Spiral Race
+          {"Pragmatic's Spiral into Madness"}
         </p>
         <div style={{
           display: 'flex',

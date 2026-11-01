@@ -243,7 +243,7 @@ function AdminContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: '**Test notification from Spiraal Race!** If you see this, the webhook is working correctly.'
+          content: "**Test notification from Pragmatic's Spiral into Madness!** If you see this, the webhook is working correctly."
         })
       })
       if (res.ok) {
@@ -1000,7 +1000,7 @@ function AdminContent() {
                                 const res = await fetch(url, {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ content: `**Test from Spiraal Race!** Webhook for team "${editingTeam.name}" is working.` })
+                                  body: JSON.stringify({ content: `**Test from Pragmatic's Spiral into Madness!** Webhook for team "${editingTeam.name}" is working.` })
                                 })
                                 setMessage(res.ok
                                   ? { type: 'success', text: 'Test message sent!' }

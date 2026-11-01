@@ -118,14 +118,8 @@ export default function Home() {
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          Spiral Race
+          {"Pragmatic's Spiral into Madness"}
         </h1>
-        <p style={{ color: '#a0a0a0' }}>
-          OSRS Clan Event
-        </p>
-        <a href="/stats" style={{ color: '#ffd700', fontSize: '0.9rem', textDecoration: 'none' }}>
-          📊 View event stats
-        </a>
       </header>
 
       {/* Board Tabs */}
