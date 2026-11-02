@@ -1,6 +1,6 @@
 # Project Status - Spiraal Race
 
-Last updated: October 2026
+Last updated: November 2026
 
 ## Current State: Production Ready
 
@@ -59,6 +59,7 @@ The application is fully functional and deployed on Vercel.
 - [x] Public `/stats` page with EHB gained per player during the event (bar chart + table)
 - [x] Bosses tab: kills per team for every boss with at least 1 kill, winning team marked, click for top players
 - [x] Activities tab: clue scrolls (all + per tier), Guardians of the Rift, Colosseum Glory, Collection Log per team
+- [x] Skills tab: XP gained per skill (+ overall) per team, click for top players
 - [x] Team filter ("All players" + one button per WOM team) and team totals chart
 - [x] Data from a WiseOldMan competition, cached in `wom_cache` and refreshed at most every 15 minutes (lazy refresh)
 - [x] Admin Settings: competition ID + "Refresh now"
@@ -102,7 +103,7 @@ The application is fully functional and deployed on Vercel.
 | `app/team/[slug]/page.js` | Team board view with submissions |
 | `app/admin/page.js` | Admin panel for tiles, teams, submissions |
 | `app/team/[slug]/login/page.js` | Team password login |
-| `app/stats/page.js` | Public event stats (EHB, bosses, activities) with team filter |
+| `app/stats/page.js` | Public event stats (EHB, bosses, activities, skills) with team filter |
 
 ### Components
 | File | Purpose |
@@ -129,7 +130,7 @@ The application is fully functional and deployed on Vercel.
 | `/api/team/auth` | POST, DELETE | Team login (7-day cookie) / logout |
 | `/api/session` | GET | Current admin/team sessions (sidebar) |
 | `/api/admin/teams/password` | GET, POST | Team password status / set password |
-| `/api/stats` | GET | Public cached EHB, boss and activity stats from WiseOldMan |
+| `/api/stats` | GET | Public cached EHB, boss, activity and skill stats from WiseOldMan |
 | `/api/admin/stats/refresh` | POST | Force a refresh of the WiseOldMan cache |
 
 ### Libraries
@@ -142,7 +143,7 @@ The application is fully functional and deployed on Vercel.
 | `lib/passwords.js` | scrypt password hashing |
 | `lib/supabaseAdmin.js` | Shared service-role Supabase client (`no-store`) |
 | `middleware.js` | Route protection for team pages and admin/submission APIs |
-| `lib/statsMetrics.js` | Boss/activity metric lists, display names, `buildMetricRows` |
+| `lib/statsMetrics.js` | Boss/activity/skill metric lists, display names, `buildMetricRows` |
 | `lib/womStats.js` | `wom_cache` handling with 15-min lazy refresh (`getCompetitionStats`) |
 
 ## Environment Variables
@@ -232,6 +233,9 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 4. Supabase Storage bucket `proof-images` must exist and be public
 
 ## Recent Changes
+
+### November 2026
+- Added Skills tab to `/stats`: XP gained per skill (+ overall) per team, from the same WOM request
 
 ### October 2026
 - Added EHB stats page (`/stats`) with WiseOldMan integration, DB cache (`wom_cache`) and team filter (see `docs/features/wom-ehb-stats.md`)

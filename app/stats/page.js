@@ -5,13 +5,14 @@ import { useSearchParams } from 'next/navigation'
 import EhbBarChart, { formatEhb } from '../../components/EhbBarChart'
 import EhbTable from '../../components/EhbTable'
 import TeamMetricTable from '../../components/TeamMetricTable'
-import { BOSS_METRICS, ACTIVITY_METRICS, buildMetricRows } from '../../lib/statsMetrics'
+import { BOSS_METRICS, ACTIVITY_METRICS, SKILL_METRICS, buildMetricRows } from '../../lib/statsMetrics'
 
 const ALL = '__all__'
 const VIEWS = [
   { id: 'ehb', label: '⏱️ EHB' },
   { id: 'bosses', label: '💀 Bosses' },
-  { id: 'activities', label: '📜 Activities' }
+  { id: 'activities', label: '📜 Activities' },
+  { id: 'skills', label: '📈 Skills' }
 ]
 
 function formatPeriod(competition) {
@@ -178,6 +179,18 @@ function StatsContent() {
             rows={buildMetricRows(visiblePlayers, ACTIVITY_METRICS, { sortByTotal: false })}
             teamNames={teamNames}
             emptyText="No activity gains yet"
+          />
+        </section>
+      )}
+
+      {/* Skills */}
+      {activeView === 'skills' && (
+        <section style={styles.card}>
+          <h2 style={styles.cardTitle}>XP gained during the event</h2>
+          <TeamMetricTable
+            rows={buildMetricRows(visiblePlayers, SKILL_METRICS, { sortByTotal: false })}
+            teamNames={teamNames}
+            emptyText="No XP gained yet"
           />
         </section>
       )}

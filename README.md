@@ -74,6 +74,7 @@ spiral-race-project/
   - EHB gained per player and per team
   - Boss kills per team (all bosses with at least 1 kill)
   - Activities per team (clue scrolls per tier, Guardians of the Rift, Colosseum Glory, Collection Log)
+  - XP gained per skill (+ overall) per team
 
 ### Admin Features
 - Password-protected admin panel (signed session cookie, 24 hours)

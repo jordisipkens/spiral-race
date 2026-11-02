@@ -2,10 +2,10 @@
 
 **Status**: ✅ Complete
 **Created**: October 2026
-**Last Updated**: October 2026
+**Last Updated**: November 2026
 
 ## Purpose
-A public `/stats` page with three tabs: **EHB** (bar chart and table with the EHB, Efficient Hours Bossed, every participant gained during the event), **Bosses** (kills per team for every boss with at least 1 kill) and **Activities** (clue scrolls, GotR, Colosseum Glory, Collection Log per team). The data comes from a WiseOldMan (WOM) competition and is cached in our database, so WOM is called at most once every 15 minutes.
+A public `/stats` page with four tabs: **EHB** (bar chart and table with the EHB, Efficient Hours Bossed, every participant gained during the event), **Bosses** (kills per team for every boss with at least 1 kill) **Activities** (clue scrolls, GotR, Colosseum Glory, Collection Log per team) and **Skills** (XP gained per skill and overall, per team). The data comes from a WiseOldMan (WOM) competition and is cached in our database, so WOM is called at most once every 15 minutes.
 
 ## User Story
 As a participant, I want to see how much EHB, boss kills and activities every player and team has gained during the event, so that I can compare progress across all players or within my own team.
@@ -15,7 +15,7 @@ As a participant, I want to see how much EHB, boss kills and activities every pl
 ### Key Components
 | Component | Path | Purpose |
 |-----------|------|---------|
-| Stats page | `app/stats/page.js` | View tabs (EHB / Bosses / Activities), team filter ("All players" + one button per WOM team) |
+| Stats page | `app/stats/page.js` | View tabs (EHB / Bosses / Activities / Skills), team filter ("All players" + one button per WOM team) |
 | TeamMetricTable | `components/TeamMetricTable.jsx` | Metrics as rows, teams as columns, 👑 for the best team, click a row for the top 5 players |
 | EhbBarChart | `components/EhbBarChart.jsx` | Horizontal CSS bar chart (`items: [{ label, value, sublabel? }]`), exports `formatEhb()` |
 | EhbTable | `components/EhbTable.jsx` | Player table: rank, player (links to WOM), team, start, end, gained, last updated |
@@ -24,8 +24,8 @@ As a participant, I want to see how much EHB, boss kills and activities every pl
 | Admin settings | `app/admin/page.js` | "WiseOldMan Competition" block: competition ID, Save, Refresh now |
 
 ### Key Files
-- `lib/wiseoldman.js`: `fetchCompetition(competitionId)` calls `GET /v2/competitions/:id` with `ehb` plus every boss and activity as `metrics` params (82 metrics, one request). It normalizes the result into `{ competition, teams, players }`. Each player has EHB `start`/`end`/`gained` and a `gains` object with only the non-zero boss/activity gains, which keeps the cache small (about 18 KB for 69 players instead of 0.7 MB raw). Players are sorted by EHB gained and teams by total EHB. WOM's `-1` (unranked) becomes `null`.
-- `lib/statsMetrics.js`: `BOSS_METRICS` (71) and `ACTIVITY_METRICS` (10), `metricName()` for display names, and `buildMetricRows(players, metrics)`, which builds per-metric rows with team totals and top players and leaves out rows with 0.
+- `lib/wiseoldman.js`: `fetchCompetition(competitionId)` calls `GET /v2/competitions/:id` with `ehb` plus every boss, activity and skill as `metrics` params (107 metrics, one request). It normalizes the result into `{ competition, teams, players }`. Each player has EHB `start`/`end`/`gained` and a `gains` object with only the non-zero boss/activity/skill gains, which keeps the cache small (about 18 KB for 69 players instead of 0.7 MB raw). Players are sorted by EHB gained and teams by total EHB. WOM's `-1` (unranked) becomes `null`.
+- `lib/statsMetrics.js`: `BOSS_METRICS` (71), `ACTIVITY_METRICS` (10) and `SKILL_METRICS` (25: `overall` + every skill incl. Sailing), `metricName()` for display names, and `buildMetricRows(players, metrics)`, which builds per-metric rows with team totals and top players and leaves out rows with 0.
 - `lib/womStats.js`: `getCompetitionStats({ metric, force })` handles the database cache (`wom_cache`) and the refresh lock. `CACHE_TTL_MINUTES = 15`.
 
 ### Dependencies
@@ -84,7 +84,7 @@ Local React state on the stats page. The selected team is preselected from `?tea
 - **Rationale**: No new dependency, and it matches the inline-style approach of the rest of the app.
 
 ### All metrics in one request
-- **Rationale**: WOM returns deltas for every metric passed in `metrics`, so EHB, bosses and activities cost a single request per 15 minutes. The `metric` column in `wom_cache` holds the dataset key (`'all'`), so a different dataset could be added later without a schema change.
+- **Rationale**: WOM returns deltas for every metric passed in `metrics`, so EHB, bosses, activities and skills cost a single request per 15 minutes. The `metric` column in `wom_cache` holds the dataset key (`'all'`), so a different dataset could be added later without a schema change.
 - **Trade-offs**: The boss list is hardcoded in `lib/statsMetrics.js`; new WOM bosses must be added there.
 
 ### Activities selection
@@ -113,10 +113,11 @@ const bossRows = buildMetricRows(stats.players, BOSS_METRICS)
 ## Known Limitations
 - WOM only counts gains after a player has been updated on WOM. The table shows "Last updated" per player.
 - New bosses on WOM are not shown until they are added to `BOSS_METRICS`.
+- The Skills tab shows XP in the same table as bosses/activities; the 👑 per skill is based on total team XP, not on XP per player.
 
 ## Future Improvements
 - [ ] "Update all participants" button (WOM `POST /competitions/:id/update-all`, needs the verification code)
-- [ ] Additional metrics (EHP, XP) as extra tabs
+- [ ] EHP as an extra tab
 - [ ] Team colours in the charts
 - [ ] Optional `WOM_API_KEY` for a higher rate limit (already supported in `lib/wiseoldman.js`)
 
