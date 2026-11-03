@@ -78,7 +78,7 @@ function getLabelPosition(innerRadius, outerRadius, startAngle, endAngle) {
   }
 }
 
-function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled, hasPendingSubmission, approvedCount = 0, showLockedTiles = true }) {
+function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile, disabled, hasPendingSubmission, approvedCount = 0, showLockedTiles = true, womProgress }) {
   const ringOuter = OUTER_RADIUS - ((ring - 1) * RING_THICKNESS)
   const ringInner = ringOuter - RING_THICKNESS
   const rotationOffset = (ring - 1) * 18
@@ -144,7 +144,32 @@ function Segment({ ring, path, boardType, progress, onClick, onShowDetails, tile
       {/* Status badge for tiles */}
       {state !== 'completed' && state !== 'locked' && tile && (
         <g>
-          {tile.is_multi_item ? (
+          {tile.wom_metric && womProgress && tile.wom_target > 0 ? (
+            /* WiseOldMan tile: show % of target */
+            <>
+              <rect
+                x={labelPos.x - 18}
+                y={labelPos.y + 8}
+                width="36"
+                height="14"
+                rx="7"
+                fill="rgba(46, 204, 113, 0.9)"
+                style={{ pointerEvents: 'none' }}
+              />
+              <text
+                x={labelPos.x}
+                y={labelPos.y + 16}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#fff"
+                fontSize="9"
+                fontWeight="bold"
+                style={{ pointerEvents: 'none' }}
+              >
+                {Math.min(100, Math.floor((womProgress.value / tile.wom_target) * 100))}%
+              </text>
+            </>
+          ) : tile.is_multi_item ? (
             /* Multi-item badge: show X/Y */
             <>
               <rect
@@ -283,7 +308,8 @@ export default function SpiralBoard({
   teamId,
   submissions = [],
   onSubmissionComplete,
-  showLockedTiles = true
+  showLockedTiles = true,
+  womProgress = []
 }) {
   const [progress, setProgress] = useState(initialProgress)
   const [centerCompleted, setCenterCompleted] = useState(initialCenterCompleted)
@@ -383,6 +409,7 @@ export default function SpiralBoard({
           hasPendingSubmission={hasPendingSubmission}
           approvedCount={approvedCount}
           showLockedTiles={showLockedTiles}
+          womProgress={tile && womProgress.find(w => w.tile_id === tile.id)}
         />
       )
     }
@@ -406,6 +433,7 @@ export default function SpiralBoard({
           onRefresh={onSubmissionComplete}
           teamId={teamId}
           submissions={submissions}
+          womProgress={womProgress.find(w => w.tile_id === modalData.tile?.id)}
         />
       )}
 

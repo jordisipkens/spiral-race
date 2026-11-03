@@ -24,6 +24,7 @@ export default function TeamPage() {
   const [submissions, setSubmissions] = useState([])
   const [showRules, setShowRules] = useState(false)
   const [showLockedTiles, setShowLockedTiles] = useState(true)
+  const [womProgress, setWomProgress] = useState([])
 
   // Load team and data
   useEffect(() => {
@@ -44,6 +45,9 @@ export default function TeamPage() {
   // Silent refresh without loading state (for auto-refresh)
   async function refreshData() {
     if (!team) return
+
+    // First, so tiles auto-completed by this WOM refresh show up in the progress below
+    await loadWomProgress(team.id)
 
     // Reload progress
     const { data: progressData } = await supabase
@@ -96,6 +100,7 @@ export default function TeamPage() {
     }
 
     setTeam(teamData)
+    loadWomProgress(teamData.id)
 
     // Load tiles
     const { data: tilesData } = await supabase
@@ -159,6 +164,19 @@ export default function TeamPage() {
     setLoading(false)
   }
 
+  // Cached WiseOldMan progress for WOM-linked tiles (refreshed server-side every 10 min)
+  async function loadWomProgress(teamId) {
+    try {
+      const res = await fetch(`/api/wom-tiles?team=${teamId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setWomProgress(data.tiles)
+      }
+    } catch (err) {
+      console.error('Error loading WOM tile progress:', err)
+    }
+  }
+
   async function loadSubmissions(teamId) {
     const { data: submissionsData } = await supabase
       .from('submissions')
@@ -187,7 +205,8 @@ export default function TeamPage() {
       tile_id: tile.id,
       completed_at: new Date().toISOString()
     }, {
-      onConflict: 'team_id,tile_id'
+      onConflict: 'team_id,tile_id',
+      ignoreDuplicates: true
     })
 
     if (error) {
@@ -411,6 +430,7 @@ export default function TeamPage() {
         submissions={submissions}
         onSubmissionComplete={handleSubmissionComplete}
         showLockedTiles={showLockedTiles}
+        womProgress={womProgress}
       />
     </main>
   )

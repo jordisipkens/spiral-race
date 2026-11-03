@@ -1,5 +1,7 @@
 # Database Schema - Spiraal Race
 
+Last updated: November 2026
+
 ## Overview
 
 Supabase PostgreSQL database with 5 main tables:
@@ -10,6 +12,7 @@ Supabase PostgreSQL database with 5 main tables:
 - `settings` - App configuration (Discord webhook, etc.)
 - `wom_cache` - Cached WiseOldMan competition data for the stats page
 - `team_passwords` - Hashed password per team (server-side only)
+- `tile_wom_progress` - Cached WiseOldMan progress per team for WOM-linked tiles
 
 ## Tables
 
@@ -53,6 +56,8 @@ CREATE TABLE tiles (
   is_center BOOLEAN DEFAULT FALSE,
   is_multi_item BOOLEAN DEFAULT FALSE,
   required_submissions INTEGER DEFAULT 1,
+  wom_metric TEXT,
+  wom_target BIGINT,
   UNIQUE(board, ring, path, is_center),
   CONSTRAINT check_required_submissions CHECK (required_submissions >= 1)
 );
@@ -73,6 +78,8 @@ CREATE INDEX idx_tiles_position ON tiles(board, ring, path);
 | is_center | BOOLEAN | True for center tile (unlocks when all paths complete) |
 | is_multi_item | BOOLEAN | True if tile requires multiple submissions |
 | required_submissions | INTEGER | Number of approved submissions needed (default 1) |
+| wom_metric | TEXT | Optional WiseOldMan metric (skill, boss or activity); the tile completes automatically when the team reaches `wom_target` |
+| wom_target | BIGINT | Team total needed for `wom_metric` (XP for skills, kc for bosses) |
 
 **Tile Count**: 16 per board (5 rings × 3 paths + 1 center) = 48 total
 
@@ -98,7 +105,7 @@ CREATE INDEX idx_progress_tile ON progress(tile_id);
 | id | UUID | Primary key |
 | team_id | UUID | Reference to teams.id |
 | tile_id | UUID | Reference to tiles.id |
-| completed_at | TIMESTAMP | When the tile was completed |
+| completed_at | TIMESTAMP | When the tile was completed (UTC). Never overwritten (upserts use `ignoreDuplicates`): ring unlock times for WOM tiles are derived from it |
 
 **Created when**: Admin approves a submission
 
@@ -194,7 +201,7 @@ ALTER TABLE team_passwords ENABLE ROW LEVEL SECURITY;
 
 ### wom_cache
 
-**Purpose**: Cache of the normalized WiseOldMan competition data, so WOM is called at most once per 15 minutes (see [features/wom-ehb-stats.md](./features/wom-ehb-stats.md)).
+**Purpose**: Cache of the normalized WiseOldMan competition data, so WOM is called at most once per 10 minutes (see [features/wom-ehb-stats.md](./features/wom-ehb-stats.md)).
 
 ```sql
 CREATE TABLE wom_cache (
@@ -217,6 +224,41 @@ ALTER TABLE wom_cache ENABLE ROW LEVEL SECURITY;
 | fetched_at | TIMESTAMPTZ | Last fetch from WOM; also used as refresh lock |
 
 **Access**: Server-side only (service role) via `lib/womStats.js`. `TIMESTAMPTZ` is used (unlike the other tables) so browsers parse the time correctly.
+
+---
+
+### tile_wom_progress
+
+**Purpose**: WiseOldMan progress of a team on a WOM-linked tile, computed from the competition cache (see [features/wom-tile-tracking.md](./features/wom-tile-tracking.md)).
+
+```sql
+ALTER TABLE tiles ADD COLUMN wom_metric TEXT, ADD COLUMN wom_target BIGINT;
+
+CREATE TABLE tile_wom_progress (
+  team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  tile_id UUID NOT NULL REFERENCES tiles(id) ON DELETE CASCADE,
+  metric TEXT NOT NULL,
+  unlocked_at TIMESTAMPTZ NOT NULL,
+  baseline JSONB NOT NULL DEFAULT '{}',
+  value BIGINT NOT NULL DEFAULT 0,
+  contributors JSONB,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (team_id, tile_id)
+);
+
+-- Only accessed server-side with the service role key
+ALTER TABLE tile_wom_progress ENABLE ROW LEVEL SECURITY;
+```
+
+| Column | Type | Description |
+|--------|------|-------------|
+| team_id, tile_id | UUID | Primary key |
+| metric | TEXT | `tiles.wom_metric` when the baseline was taken (a changed metric takes a new baseline) |
+| unlocked_at | TIMESTAMPTZ | WOM `startDate`: competition start for ring 1, otherwise the last completion in the previous ring |
+| baseline | JSONB | `{ username: gains }` of the team players (since competition start) when the tile unlocked; empty for ring 1 |
+| value | BIGINT | Team total gained since `unlocked_at` (gains now − baseline) |
+| contributors | JSONB | Top 5 `[{ displayName, value }]` |
+| fetched_at | TIMESTAMPTZ | Time of the WOM data the value is based on |
 
 ---
 

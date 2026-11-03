@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import SubmissionCard from '../../components/SubmissionCard'
 import { buildMissingTiles } from '../../lib/tiles'
+import { SKILL_METRICS, BOSS_METRICS, ACTIVITY_METRICS, metricName, metricUnit } from '../../lib/statsMetrics'
 
 const BOARDS = ['easy', 'medium', 'hard']
 const BOARD_COLORS = {
@@ -562,7 +563,9 @@ function AdminContent() {
         description: tile.description,
         points: tile.points,
         is_multi_item: tile.is_multi_item || false,
-        required_submissions: tile.is_multi_item ? (tile.required_submissions || 1) : 1
+        required_submissions: tile.is_multi_item ? (tile.required_submissions || 1) : 1,
+        wom_metric: tile.wom_metric || null,
+        wom_target: tile.wom_metric ? (tile.wom_target || null) : null
       })
       .eq('id', tile.id)
 
@@ -607,7 +610,8 @@ function AdminContent() {
             tile_id: tileId,
             completed_at: new Date().toISOString()
           }, {
-            onConflict: 'team_id,tile_id'
+            onConflict: 'team_id,tile_id',
+            ignoreDuplicates: true
           })
         }
       }
@@ -881,6 +885,35 @@ function AdminContent() {
                           </div>
                         )}
                       </div>
+                      <div style={styles.multiItemSection}>
+                        <label style={{ color: '#aaa', fontSize: '0.9rem' }}>
+                          WiseOldMan target (team total from the moment the tile unlocks, completes automatically):
+                        </label>
+                        <div style={styles.requiredSubmissionsRow}>
+                          <select
+                            value={editingTile.wom_metric || ''}
+                            onChange={e => setEditingTile({ ...editingTile, wom_metric: e.target.value || null })}
+                            style={{ ...styles.input, width: 'auto' }}
+                          >
+                            <option value="">None</option>
+                            {[['Skills (XP)', SKILL_METRICS], ['Bosses (kc)', BOSS_METRICS], ['Activities', ACTIVITY_METRICS]].map(([group, metrics]) => (
+                              <optgroup key={group} label={group}>
+                                {metrics.map(metric => <option key={metric} value={metric}>{metricName(metric)}</option>)}
+                              </optgroup>
+                            ))}
+                          </select>
+                          {editingTile.wom_metric && (
+                            <input
+                              type="number"
+                              min="1"
+                              value={editingTile.wom_target || ''}
+                              onChange={e => setEditingTile({ ...editingTile, wom_target: Math.max(1, parseInt(e.target.value) || 0) || null })}
+                              placeholder={`Target ${metricUnit(editingTile.wom_metric)}`.trim()}
+                              style={{ ...styles.input, width: '140px' }}
+                            />
+                          )}
+                        </div>
+                      </div>
                       <div style={styles.editActions}>
                         <button onClick={() => updateTile(editingTile)} disabled={saving} style={styles.saveBtn}>
                           Save
@@ -902,6 +935,11 @@ function AdminContent() {
                         {tile.is_multi_item && (
                           <div style={styles.multiItemBadge}>
                             Multi-Item: {tile.required_submissions} submissions required
+                          </div>
+                        )}
+                        {tile.wom_metric && (
+                          <div style={{ ...styles.multiItemBadge, background: 'rgba(46, 204, 113, 0.2)', border: '1px solid #2ecc71', color: '#2ecc71' }}>
+                            WOM: {(tile.wom_target || 0).toLocaleString('en-US')} {metricName(tile.wom_metric)} {metricUnit(tile.wom_metric)}
                           </div>
                         )}
                       </div>
@@ -1324,7 +1362,7 @@ function AdminContent() {
             <h3 style={{ color: '#fff', marginBottom: '1rem' }}>WiseOldMan Competition</h3>
             <p style={{ color: '#aaa', marginBottom: '1rem', fontSize: '0.9rem' }}>
               Used for the stats page (<a href="/stats" target="_blank" style={{ color: '#ffd700' }}>/stats</a>).
-              Data is cached and refreshed from WiseOldMan at most every 15 minutes.
+              Data is cached and refreshed from WiseOldMan at most every 10 minutes.
             </p>
 
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>

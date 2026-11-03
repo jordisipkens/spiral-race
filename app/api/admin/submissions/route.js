@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdminRequest } from '../../../../lib/auth'
+import { saveProgress, postWebhook, notifyRingUnlock } from '../../../../lib/tileCompletion'
+import { syncWomTiles } from '../../../../lib/womTiles'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
@@ -113,18 +115,11 @@ export async function PATCH(request) {
       const progressCreated = approvedCount >= requiredCount
 
       // Only create progress if we've reached the required number
+      let tileNewlyCompleted = false
       if (progressCreated) {
-        const { error: progressError } = await supabaseAdmin
-          .from('progress')
-          .upsert({
-            team_id: submission.team_id,
-            tile_id: submission.tile_id,
-            completed_at: new Date().toISOString()
-          }, {
-            onConflict: 'team_id,tile_id'
-          })
-
-        if (progressError) {
+        try {
+          tileNewlyCompleted = await saveProgress(submission.team_id, submission.tile_id)
+        } catch (progressError) {
           console.error('Error updating progress:', progressError)
           // Rollback submission status
           await supabaseAdmin
@@ -165,51 +160,20 @@ export async function PATCH(request) {
             approvalMessage = `✅ Submission approved for tile **${tileTitle}** (${board})! Tile completed!`
           }
 
-          await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: approvalMessage })
-          }).catch(err => console.error('Team webhook failed:', err))
+          await postWebhook(webhookUrl, approvalMessage)
 
-          // Check for ring unlock (only if progress was created)
-          if (progressCreated && tile && !tile.is_center) {
-            const tileRing = tile.ring
-            const tileBoard = tile.board
-
-            // Get all progress for this team on this board
-            const { data: progressData } = await supabaseAdmin
-              .from('progress')
-              .select('tile_id, tiles(ring, path, board, is_center)')
-              .eq('team_id', submission.team_id)
-
-            if (progressData) {
-              // Filter to same board, non-center tiles
-              const boardProgress = progressData.filter(
-                p => p.tiles?.board === tileBoard && !p.tiles?.is_center
-              )
-
-              // Check if all 3 paths in this ring are now complete
-              const ringTiles = boardProgress.filter(p => p.tiles?.ring === tileRing)
-              const completedPaths = new Set(ringTiles.map(p => p.tiles?.path))
-
-              if (completedPaths.size === 3) {
-                // All 3 paths complete in this ring - ring unlocked!
-                const nextRing = tileRing + 1
-                const ringMessage = nextRing <= 5
-                  ? `🔓 Ring ${tileRing} completed on the **${tileBoard}** board! Ring ${nextRing} is now available.`
-                  : `🏆 All rings completed on the **${tileBoard}** board! The center tile is now unlocked!`
-
-                await fetch(webhookUrl, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ content: ringMessage })
-                }).catch(err => console.error('Ring unlock webhook failed:', err))
-              }
-            }
+          // Ring unlock message only the first time the tile is completed
+          if (tileNewlyCompleted) {
+            await notifyRingUnlock(submission.team_id, tile, webhookUrl)
           }
         }
       } catch (err) {
         console.error('Error sending team webhook:', err)
+      }
+
+      // A completed tile can unlock a ring: give its WOM tiles a baseline from fresh WOM data
+      if (tileNewlyCompleted) {
+        await syncWomTiles({ force: true }).catch(err => console.error('Error syncing WOM tiles:', err))
       }
 
       return NextResponse.json({

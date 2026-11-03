@@ -61,10 +61,17 @@ The application is fully functional and deployed on Vercel.
 - [x] Activities tab: clue scrolls (all + per tier), Guardians of the Rift, Colosseum Glory, Collection Log per team
 - [x] Skills tab: XP gained per skill (+ overall) per team, click for top players
 - [x] Team filter ("All players" + one button per WOM team) and team totals chart
-- [x] Data from a WiseOldMan competition, cached in `wom_cache` and refreshed at most every 15 minutes (lazy refresh)
+- [x] Data from a WiseOldMan competition, cached in `wom_cache` and refreshed at most every 10 minutes (lazy refresh)
 - [x] Admin Settings: competition ID + "Refresh now"
 - [x] "Stats" button on team pages links to `/stats?team=<team name>`
 - See `docs/features/wom-ehb-stats.md`
+
+### WiseOldMan Tiles
+- [x] Link a tile to one WOM metric (skill XP, boss kc, activity) with a target in the admin tile editor
+- [x] Team total since the tile unlocked, from the competition cache (one WOM request for everything) minus a baseline taken at unlock, stored in `tile_wom_progress`
+- [x] Tile completes automatically at the target, with Discord message and ring unlock message
+- [x] `%` badge on the board, progress bar + top contributors in the tile modal
+- See `docs/features/wom-tile-tracking.md`
 
 ### Visual Indicators
 - [x] Pending submissions show yellow border + clock icon
@@ -132,6 +139,7 @@ The application is fully functional and deployed on Vercel.
 | `/api/admin/teams/password` | GET, POST | Team password status / set password |
 | `/api/stats` | GET | Public cached EHB, boss, activity and skill stats from WiseOldMan |
 | `/api/admin/stats/refresh` | POST | Force a refresh of the WiseOldMan cache |
+| `/api/wom-tiles` | GET | WOM progress per WOM-linked tile for a team (syncs with competition cache, auto-completes tiles) |
 
 ### Libraries
 | File | Purpose |
@@ -144,7 +152,9 @@ The application is fully functional and deployed on Vercel.
 | `lib/supabaseAdmin.js` | Shared service-role Supabase client (`no-store`) |
 | `middleware.js` | Route protection for team pages and admin/submission APIs |
 | `lib/statsMetrics.js` | Boss/activity/skill metric lists, display names, `buildMetricRows` |
-| `lib/womStats.js` | `wom_cache` handling with 15-min lazy refresh (`getCompetitionStats`) |
+| `lib/womStats.js` | `wom_cache` handling with 10-min lazy refresh (`getCompetitionStats`) |
+| `lib/womTiles.js` | WOM-linked tiles: unlock time, baseline, sync with competition cache, auto-completion |
+| `lib/tileCompletion.js` | Shared tile completion (`saveProgress`, `notifyRingUnlock`, `postWebhook`) |
 
 ## Environment Variables
 
@@ -168,6 +178,7 @@ AUTH_SECRET=optional-cookie-signing-secret
 5. **settings** - App configuration (Discord webhook URL, WOM competition ID)
 6. **wom_cache** - Cached WiseOldMan competition data for `/stats`
 7. **team_passwords** - Hashed team passwords (service role only)
+8. **tile_wom_progress** - Cached WOM progress per team for WOM-linked tiles (service role only)
 
 See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for full details.
 
@@ -193,7 +204,7 @@ Resetting a board is meant for starting a new event, so old submissions, screens
 
 ### Why cache WiseOldMan data in the database?
 - **Date**: October 2026
-- **Decision**: Visitors read EHB stats from the `wom_cache` table. A request refreshes the cache from WOM only when it is older than 15 minutes, and a conditional update makes sure only one request does the refresh.
+- **Decision**: Visitors read EHB stats from the `wom_cache` table. A request refreshes the cache from WOM only when it is older than 10 minutes, and a conditional update makes sure only one request does the refresh.
 - **Rationale**: The load on WOM does not depend on the number of visitors (rate limit is about 20 req/min without a key). Vercel Hobby cron jobs can only run once per day, so lazy refresh works on any plan.
 - **Alternatives Considered**: Vercel Cron, Next.js fetch cache (not shared between serverless instances), calling WOM from the browser.
 - **Trade-offs**: The first visitor after the TTL waits for one WOM call.
@@ -235,6 +246,8 @@ Keeps component code self-contained and makes it easy to copy/modify without man
 ## Recent Changes
 
 ### November 2026
+- Added WiseOldMan tiles: tiles linked to a metric + target complete automatically from WOM data (see `docs/features/wom-tile-tracking.md`)
+- Progress upserts no longer overwrite `completed_at`; ring unlock Discord message is sent only once per ring
 - Added Skills tab to `/stats`: XP gained per skill (+ overall) per team, from the same WOM request
 
 ### October 2026

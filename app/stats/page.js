@@ -34,7 +34,7 @@ function StatsContent() {
     loadStats()
   }, [])
 
-  // Auto-refresh every 3 minutes (reads from our cache, WOM is refreshed at most every 15 min)
+  // Auto-refresh every 3 minutes (reads from our cache, WOM is refreshed at most every 10 min)
   useEffect(() => {
     const interval = setInterval(() => {
       loadStats()

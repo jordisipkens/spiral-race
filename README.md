@@ -81,13 +81,14 @@ spiral-race-project/
 - Set or change a password per team (Teams tab)
 - Manage tiles (title, description, points per position)
 - Multi-item tiles: configure tiles requiring multiple submissions to complete
+- WiseOldMan tiles: link a tile to a skill/boss/activity with a target; it completes automatically when the team reaches it (counted from the moment the tile unlocks)
 - Reset all tiles of a board (deletes its tiles, submissions, screenshots and progress, then regenerates defaults)
 - Create and manage teams with unique slugs
 - Review pending submissions with full-screen image viewer
 - View related approved submissions for multi-item tiles
 - Approve/reject submissions with optional rejection reason
 - Auto-refresh every 1 minute for new submissions
-- Configure the WiseOldMan competition ID for the stats page (cached, refreshed at most every 15 minutes)
+- Configure the WiseOldMan competition ID for the stats page (cached, refreshed at most every 10 minutes)
 
 ### Visual States
 - **Locked**: Opacity 0.25 - ring not yet available
@@ -140,6 +141,8 @@ CREATE TABLE tiles (
   is_center BOOLEAN DEFAULT FALSE,
   is_multi_item BOOLEAN DEFAULT FALSE,
   required_submissions INTEGER DEFAULT 1,
+  wom_metric TEXT,
+  wom_target BIGINT,
   UNIQUE(board, ring, path, is_center),
   CONSTRAINT check_required_submissions CHECK (required_submissions >= 1)
 );
@@ -179,6 +182,20 @@ CREATE TABLE wom_cache (
   PRIMARY KEY (competition_id, metric)
 );
 ALTER TABLE wom_cache ENABLE ROW LEVEL SECURITY;
+
+-- WiseOldMan tile progress (server-side only)
+CREATE TABLE tile_wom_progress (
+  team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  tile_id UUID NOT NULL REFERENCES tiles(id) ON DELETE CASCADE,
+  metric TEXT NOT NULL,
+  unlocked_at TIMESTAMPTZ NOT NULL,
+  baseline JSONB NOT NULL DEFAULT '{}',
+  value BIGINT NOT NULL DEFAULT 0,
+  contributors JSONB,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (team_id, tile_id)
+);
+ALTER TABLE tile_wom_progress ENABLE ROW LEVEL SECURITY;
 
 -- Team passwords (server-side only)
 CREATE TABLE team_passwords (
@@ -258,7 +275,7 @@ Which admin/team sessions the browser has (used by the sidebar).
 List teams with a password / set a team password (admin only).
 
 ### GET /api/stats
-Cached EHB, boss and activity stats for the configured WiseOldMan competition (refreshed from WOM at most every 15 minutes).
+Cached EHB, boss and activity stats for the configured WiseOldMan competition (refreshed from WOM at most every 10 minutes).
 
 ### POST /api/admin/stats/refresh
 Force a refresh of the WiseOldMan cache (admin only).

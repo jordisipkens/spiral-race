@@ -1,6 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { metricName, metricUnit } from '../lib/statsMetrics'
+
+const formatNumber = value => Math.round(value).toLocaleString('en-US')
+const formatTime = value => new Date(value).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 export default function TileModal({
   tile,
@@ -10,7 +14,8 @@ export default function TileModal({
   disabled,
   teamId,
   submissions = [],
-  onRefresh
+  onRefresh,
+  womProgress
 }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -218,6 +223,45 @@ export default function TileModal({
             </p>
           </div>
         )}
+
+        {/* WiseOldMan Progress */}
+        {tile.wom_metric && tile.wom_target > 0 && (() => {
+          const unit = metricUnit(tile.wom_metric)
+          const label = `${metricName(tile.wom_metric)}${unit ? ` ${unit}` : ''}`
+          const value = womProgress?.value || 0
+          return (
+            <div style={styles.womProgress}>
+              <div style={styles.multiItemHeader}>
+                <span style={styles.womBadge}>WiseOldMan</span>
+                <span style={styles.womCount}>
+                  {formatNumber(value)} / {formatNumber(tile.wom_target)} {label}
+                </span>
+              </div>
+              <div style={{ ...styles.progressBarContainer, background: 'rgba(46, 204, 113, 0.2)' }}>
+                <div style={{ ...styles.progressBarFill, ...styles.womBarFill, width: `${Math.min(100, (value / tile.wom_target) * 100)}%` }} />
+              </div>
+              {womProgress?.contributors?.length > 0 && (
+                <div style={{ marginBottom: '0.75rem' }}>
+                  {womProgress.contributors.map((player, i) => (
+                    <div key={player.displayName} style={styles.womContributor}>
+                      <span style={{ color: '#ddd' }}>{i + 1}. {player.displayName}</span>
+                      <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>{formatNumber(player.value)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p style={styles.multiItemHint}>
+                {isCompleted
+                  ? 'Target reached!'
+                  : isLocked
+                    ? 'Tracking starts when this tile unlocks.'
+                    : womProgress
+                      ? `Team total since ${formatTime(womProgress.unlocked_at)} · updated ${formatTime(womProgress.fetched_at)} · completes automatically`
+                      : 'Tracking starts at the next update (every 10 minutes).'}
+              </p>
+            </div>
+          )
+        })()}
 
         {/* Existing Submissions */}
         {tileSubmissions.length > 0 && (
@@ -723,6 +767,35 @@ const styles = {
     background: 'linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%)',
     borderRadius: '4px',
     transition: 'width 0.3s ease'
+  },
+  womProgress: {
+    background: 'rgba(46, 204, 113, 0.1)',
+    border: '1px solid rgba(46, 204, 113, 0.3)',
+    borderRadius: '8px',
+    padding: '1rem',
+    marginBottom: '1.5rem'
+  },
+  womBadge: {
+    background: '#27ae60',
+    color: 'white',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    fontWeight: 'bold'
+  },
+  womCount: {
+    color: '#2ecc71',
+    fontWeight: 'bold',
+    fontSize: '0.9rem'
+  },
+  womBarFill: {
+    background: 'linear-gradient(90deg, #2ecc71 0%, #27ae60 100%)'
+  },
+  womContributor: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '0.85rem',
+    padding: '0.1rem 0'
   },
   multiItemHint: {
     color: '#aaa',

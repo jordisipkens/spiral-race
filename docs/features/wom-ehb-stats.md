@@ -5,7 +5,7 @@
 **Last Updated**: November 2026
 
 ## Purpose
-A public `/stats` page with four tabs: **EHB** (bar chart and table with the EHB, Efficient Hours Bossed, every participant gained during the event), **Bosses** (kills per team for every boss with at least 1 kill) **Activities** (clue scrolls, GotR, Colosseum Glory, Collection Log per team) and **Skills** (XP gained per skill and overall, per team). The data comes from a WiseOldMan (WOM) competition and is cached in our database, so WOM is called at most once every 15 minutes.
+A public `/stats` page with four tabs: **EHB** (bar chart and table with the EHB, Efficient Hours Bossed, every participant gained during the event), **Bosses** (kills per team for every boss with at least 1 kill) **Activities** (clue scrolls, GotR, Colosseum Glory, Collection Log per team) and **Skills** (XP gained per skill and overall, per team). The data comes from a WiseOldMan (WOM) competition and is cached in our database, so WOM is called at most once every 10 minutes.
 
 ## User Story
 As a participant, I want to see how much EHB, boss kills and activities every player and team has gained during the event, so that I can compare progress across all players or within my own team.
@@ -26,7 +26,7 @@ As a participant, I want to see how much EHB, boss kills and activities every pl
 ### Key Files
 - `lib/wiseoldman.js`: `fetchCompetition(competitionId)` calls `GET /v2/competitions/:id` with `ehb` plus every boss, activity and skill as `metrics` params (107 metrics, one request). It normalizes the result into `{ competition, teams, players }`. Each player has EHB `start`/`end`/`gained` and a `gains` object with only the non-zero boss/activity/skill gains, which keeps the cache small (about 18 KB for 69 players instead of 0.7 MB raw). Players are sorted by EHB gained and teams by total EHB. WOM's `-1` (unranked) becomes `null`.
 - `lib/statsMetrics.js`: `BOSS_METRICS` (71), `ACTIVITY_METRICS` (10) and `SKILL_METRICS` (25: `overall` + every skill incl. Sailing), `metricName()` for display names, and `buildMetricRows(players, metrics)`, which builds per-metric rows with team totals and top players and leaves out rows with 0.
-- `lib/womStats.js`: `getCompetitionStats({ metric, force })` handles the database cache (`wom_cache`) and the refresh lock. `CACHE_TTL_MINUTES = 15`.
+- `lib/womStats.js`: `getCompetitionStats({ metric, force })` handles the database cache (`wom_cache`) and the refresh lock. `CACHE_TTL_MINUTES = 10`.
 
 ### Dependencies
 - **Internal**: `settings` table (`wom_competition_id`), admin auth cookie
@@ -38,7 +38,7 @@ As a participant, I want to see how much EHB, boss kills and activities every pl
 1. The admin enters the WOM competition ID in Settings. On Save it is stored as `settings.wom_competition_id` and the cache is filled right away via `POST /api/admin/stats/refresh`.
 2. `/stats` calls `GET /api/stats` on load and every 3 minutes.
 3. The route reads the `wom_cache` row for `(competition_id, 'all')`:
-   - **Fresh** (< 15 min): it is returned directly.
+   - **Fresh** (< 10 min): it is returned directly.
    - **Missing**: the route fetches from WOM, upserts the row and returns it.
    - **Stale**: the route "claims" the refresh with a conditional update (`fetched_at = now() WHERE fetched_at < threshold`). Only the request whose update matched a row calls WOM; concurrent requests get the existing cache.
 4. If WOM fails while a cache exists, the old data is returned with `stale: true` and `fetched_at` is set so that a retry happens after about 1 minute. Without any cache, the route returns `502`.
@@ -84,7 +84,7 @@ Local React state on the stats page. The selected team is preselected from `?tea
 - **Rationale**: No new dependency, and it matches the inline-style approach of the rest of the app.
 
 ### All metrics in one request
-- **Rationale**: WOM returns deltas for every metric passed in `metrics`, so EHB, bosses, activities and skills cost a single request per 15 minutes. The `metric` column in `wom_cache` holds the dataset key (`'all'`), so a different dataset could be added later without a schema change.
+- **Rationale**: WOM returns deltas for every metric passed in `metrics`, so EHB, bosses, activities and skills cost a single request per 10 minutes. The `metric` column in `wom_cache` holds the dataset key (`'all'`), so a different dataset could be added later without a schema change.
 - **Trade-offs**: The boss list is hardcoded in `lib/statsMetrics.js`; new WOM bosses must be added there.
 
 ### Activities selection
@@ -104,7 +104,7 @@ const bossRows = buildMetricRows(stats.players, BOSS_METRICS)
 ```
 
 ## Testing Considerations
-- [ ] Two calls within 15 minutes return the same `fetchedAt` (no WOM call)
+- [ ] Two calls within 10 minutes return the same `fetchedAt` (no WOM call)
 - [ ] Setting `fetched_at` back 20 minutes in Supabase triggers a new fetch
 - [ ] Invalid competition ID with an existing cache returns `stale: true`
 - [ ] Non-team competition: no team filter buttons, only the full list
@@ -122,5 +122,6 @@ const bossRows = buildMetricRows(stats.players, BOSS_METRICS)
 - [ ] Optional `WOM_API_KEY` for a higher rate limit (already supported in `lib/wiseoldman.js`)
 
 ## Related Features
+- [WiseOldMan Tiles](./wom-tile-tracking.md): computes tile progress from this cache (per-player `gains` + team mapping).
 - Admin Settings: the competition ID is stored next to the Discord webhook and the locked-tiles setting.
 - Team pages: link to `/stats?team=<team name>`.
